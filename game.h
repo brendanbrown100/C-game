@@ -14,6 +14,7 @@
 
 #define MAX_LEVELS 10
 #define MAX_SPAWNS 10
+#define MAX_COINS 100
 
 #define DIR_DOWN 0
 #define DIR_LEFT 1
@@ -115,6 +116,13 @@ typedef struct Camera {
     int shakeOffsetY;
 } Camera;
 
+typedef struct Coin {
+    int x;
+    int y;
+    int value;
+
+    int remove;
+} Coin;
 
 typedef struct Game {
     Player player;
@@ -125,6 +133,9 @@ typedef struct Game {
     int currentLevel;
     int gameOver;
     int gameWin;
+
+    Coin coins[MAX_COINS];
+    int coinCount;
 
     HBITMAP wallTile;
     HBITMAP wallUpTile;
@@ -148,13 +159,7 @@ typedef struct Game {
     Animation coinAnim;
 } Game;
 
-typedef struct Coin {
-    int x;
-    int y;
-    int value;
 
-    int remove;
-}
 
 
 int Game_Init(Game *game);
@@ -168,9 +173,11 @@ void Game_Next_Level(Game *game);
 SpawnType Random_Spawn();
 int Check_Distance_Range(int x1, int y1, int width1, int height1, int x2, int y2, int width2, int height2, int range);
 int Spawn_Init(Game *game, int x, int y, SpawnType type);
-void Spawn_Render(Game *game, Spawn spawns[MAX_SPAWNS], int spawnCount, HDC hdc, HDC bufferDC);
+void Spawn_Render(Game *game, Spawn spawns[], int spawnCount, HDC hdc, HDC bufferDC);
 void Apply_Spawn_Effect(Game *game, Spawn *spawn);
 void Camera_UpdateShake(Camera *camera);
 void Camera_Shake(Camera *camera, int duration, int strength);
+void Coin_Render(Game *game, Coin coins[], int coinCount, HDC hdc, HDC bufferDC);
+int Create_Coin(Game *game, int x, int y, int value);
 
 #endif

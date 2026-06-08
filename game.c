@@ -108,6 +108,7 @@ static int Game_InitLevel(Game *game, const char *levelPath) {
 
     
     level->spawnCount = 0;
+    game->coinCount = 0;
 
     if (level->tiles) {
         free(level->tiles);
@@ -353,7 +354,8 @@ void Game_Render(Game *game, HWND hwnd) {
     Player *player = &game->player;
     Player_Render(player, game, hdc, bufferDC);
     Enemy_Render(game, hdc, bufferDC);
-    Spawn_Render(game,level->spawns, level->spawnCount, hdc, bufferDC);
+    Spawn_Render(game, level->spawns, level->spawnCount, hdc, bufferDC);
+    Coin_Render(game, game->coins, game->coinCount, hdc, bufferDC);
 
     BitBlt(hdc, 0, 0, game->camera.width, game->camera.height, bufferDC, 0, 0, SRCCOPY);
     SelectObject(bufferDC, oldBitmap);
@@ -363,7 +365,7 @@ void Game_Render(Game *game, HWND hwnd) {
     
 }
 
-void Spawn_Render(Game *game, Spawn spawns[MAX_SPAWNS], int spawnCount, HDC hdc, HDC bufferDC) {
+void Spawn_Render(Game *game, Spawn spawns[], int spawnCount, HDC hdc, HDC bufferDC) {
     for (int i = 0; i < spawnCount; i++) {
         Spawn *spawn = &spawns[i];
         if (spawn->remove) continue;
@@ -394,6 +396,41 @@ void Spawn_Render(Game *game, Spawn spawns[MAX_SPAWNS], int spawnCount, HDC hdc,
             RGB(0, 0, 0)
         );
         DeleteDC(spriteDC);
+    }
+}
+
+void Coin_Render(Game *game, Coin coins[], int coinCount, HDC hdc, HDC bufferDC) {
+    for (int i = 0; i < coinCount; i++) {
+        Coin *coin = &coins[i];
+        if (coin->remove) continue;
+
+        Animation *anim = &game->coinAnim;
+        
+        int screenX = coin->x - game->camera.x;
+        int screenY = coin->y - game->camera.y;
+
+        HDC spriteDC = CreateCompatibleDC(hdc);
+        SelectObject(spriteDC, anim->image);
+
+        Animation_Update(anim, 0);
+        int srcX = anim->currentFrame * anim->frameWidth;
+        int srcY = 0;
+
+        TransparentBlt(
+            bufferDC,
+            screenX,
+            screenY,
+            anim->frameWidth,
+            anim->frameHeight,
+            spriteDC,
+            srcX,
+            srcY,
+            anim->frameWidth,
+            anim->frameHeight,
+            RGB(0, 0, 0)
+        );
+        DeleteDC(spriteDC);
+
     }
 }
 
@@ -583,6 +620,16 @@ void Apply_Spawn_Effect(Game *game, Spawn *spawn) {
             game->player.attackDamage = (strength < MAX_ATTACK_DAMAGE) ? strength : MAX_ATTACK_DAMAGE;
             return;
     }
+}
+
+int Create_Coin(Game *game, int x, int y, int value) {
+    if (game->coinCount >= MAX_COINS) return 0;
+    
+    Coin *coin = &game->coins[game->coinCount++];
+    coin->x = x;
+    coin->y = y;
+    coin->value = value;
+    coin->remove = 0;
 }
 
 void Camera_Shake(Camera *camera, int duration, int strength) {

@@ -9,6 +9,7 @@ static void Player_CheckAttackHit(Game *game);
 static Animation *Player_GetCurrentAnimation(Player *player);
 static void Check_Player_Interact(Game *game);
 static void Check_Player_Spawn(Game *game);
+static void Check_Player_Coin(Game *game);
 
 void Player_Init(Game *game, Level *level) {
     Player *player = &game->player;
@@ -218,6 +219,7 @@ void Player_Update(Game *game) {
 
     HealthBar_Update(&game->player);
     Check_Player_Spawn(game);
+    Check_Player_Coin(game);
 
 
     
@@ -310,6 +312,20 @@ static void Check_Player_Spawn(Game *game) {
     }
 }
 
+static void Check_Player_Coin(Game *game) {
+    Player *player = &game->player;
+    for (int i = 0; i < game->coinCount; i++) {
+        Coin *coin = &game->coins[i];
+        if (coin->remove) continue;
+        if (Check_Distance_Range(player->x, player->y, player->spriteWidth, player->spriteHeight,
+                                  coin->x, coin->y, COIN_FRAME_WIDTH, COIN_FRAME_HEIGHT,
+                                  PLAYER_INTERACT_RANGE)) {
+            player->score += coin->value;
+            printf("score: %d\n", player->score);
+            coin->remove = 1;
+        }
+    }
+}
 
 static void Check_Player_Interact(Game *game) {
     Player *player = &game->player; 

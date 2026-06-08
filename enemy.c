@@ -113,6 +113,7 @@ void Enemy_Update(Game *game) {
                 if (enemy->hasSpawn) {
                     SpawnType spawn = Random_Spawn();
                     Spawn_Init(game, enemy->x, enemy->y, spawn);
+                    Create_Coin(game, enemy->x, enemy->y, 10);
                     enemy->hasSpawn = 0;
                 }
             }
@@ -266,7 +267,6 @@ static void Check_Enemy_Attack(Game *game, Enemy *enemy, int distance) {
     game->player.health = health >= 0 ? health : 0;
     if (health > 0) {
         game->player.beenHit = 1;
-        printf("Enemy Attack: Player Health - %d\n", game->player.health);
     }
     else game->player.dead = 1;
     
