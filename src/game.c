@@ -173,7 +173,7 @@ int Game_InitLevel(Game *game, const char *levelPath) {
         &level->enemySpeed
         ) != 6) {
 
-        printf("Invalid level header\n");
+        printf("Invalid level header: level %d\n", game->currentLevel + 1);
         fclose(file);
         return 0;
     }
@@ -395,6 +395,7 @@ void Spawn_Barrel(Game *game, int x, int y) {
 
     if (barrel == NULL) {
         if (game->barrelCount >= MAX_BARRELS) {
+            printf("FAILED TO INITILIZE BARREL: TOO MANY BARRELS\n");
             return;
         }
 
@@ -1202,6 +1203,7 @@ void Spawn_Jet(Game *game) {
 
     if (jet == NULL) {
         if (game->jetCount >= MAX_JETS) {
+            printf("FAILED TO INITILIZE JET: TOO MANY JETS\n");
             return;
         }
 
@@ -1650,7 +1652,10 @@ void Apply_Spawn_Effect(Game *game, Spawn *spawn) {
 }
 
 int Create_Coin(Game *game, int x, int y, int value) {
-    if (game->coinCount >= MAX_COINS) return 0;
+    if (game->coinCount >= MAX_COINS) {
+        printf("FAILED TO INITILIZE COIN: TOO MANY COINS\n");
+        return 0;
+    }
     
     Coin *coin = &game->coins[game->coinCount++];
     coin->x = x;

@@ -458,6 +458,7 @@ static void Shoot_Arrow(Game *game, Enemy *enemy) {
 
     if (arrow == NULL) {
         if (game->arrowCount >= MAX_ARROWS) {
+            printf("FAILED TO INITILIZE ENEMY ARROW: TOO MANY ARROWS\n");
             return;
         }
 

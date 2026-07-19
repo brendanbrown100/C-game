@@ -159,8 +159,7 @@ void Pause_Render(PauseMenu *pauseMenu, HWND hwnd) {
         SRCCOPY
     );
     DeleteDC(pauseDC);
-
-
+    
     SelectObject(bufferDC, oldBuffer);
     DeleteObject(bufferBitmap);
     DeleteDC(bufferDC);
