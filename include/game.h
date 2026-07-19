@@ -130,7 +130,8 @@
 #define NUMBERS_FRAME_WIDTH 16
 #define NUMBERS_FRAME_HEIGHT 16
 
-#define NUMBERS_START_X 20
+#define SCORE_START_X 10
+#define SCORE_START_Y 10
 
 #define GAME_OVER_FRAME_WIDTH 600
 #define GAME_OVER_FRAME_HEIGHT 300
@@ -217,7 +218,6 @@ typedef struct KeyCodeData {
     int selectKeyCode;
     int pauseKeyCode;
 } KeyCodeData;
-
 
 typedef struct Level {
     int width;
@@ -388,7 +388,7 @@ typedef struct Game {
 int Game_Init(Game *game);
 int Game_InitLevel(Game *game, const char *levelPath);
 void Game_Update(GameHandler *handler);
-void Game_Render(Game *game, HWND hwnd);
+void Game_Render(GameHandler *handler, HWND hwnd);
 void Image_Init(Animation *anim, const char *path, int frameWidth, int frameHeight, int frameDelay, int *frameCounts);
 void New_Image_Init(NewAnimation *anim, int frameWidth, int frameHeight, int frameDelay, int *frameCounts);
 int Collision_Check(Game *game, int newX, int newY, int hitboxWidth, int hitboxHeight, int hitboxOffsetX, int hitboxOffsetY);
@@ -417,6 +417,6 @@ void Spawn_Jet(Game *game);
 int Check_Fall(Game *game, int newX, int newY, int hitboxWidth, int hitboxHeight, int hitboxOffsetX, int hitboxOffsetY);
 int Game_Restart_Current_Level(Game *game);
 void Spawn_Barrel(Game *game, int x, int y);
-void Number_Render(Game *game, int x, int y, int num, HDC hdc, HDC bufferDC);
+void Number_Render(Game *game, int startX, int startY, int num, HDC hdc, HDC bufferDC);
 
 #endif

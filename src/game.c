@@ -10,7 +10,6 @@
 
 static void Game_UpdateCamera(Game *game);
 static int Level_Won(Game *game);
-static void Score_Render(Game *game, HDC hdc, HDC bufferDC);
 static void Jet_Update(Game *game);
 static void Jet_Render(Game *game, HDC hdc, HDC bufferDC);
 static void Game_Screen_Event(Game *game, Animation *anim, HDC hdc, HDC bufferDC);
@@ -488,7 +487,7 @@ static int Load_Key_Codes(Game *game) {
     FILE *file = fopen(GAME_KEY_CODES_PATH, "rb");
 
     if (file == NULL) {
-        printf("No key codes file found");
+        printf("FILE NOT FOUND: No key codes file found\n");
         game->upKeyCode = 87;
         game->downKeyCode = 83;
         game->leftKeyCode = 65;
@@ -514,7 +513,7 @@ static int Load_Key_Codes(Game *game) {
     fclose(file);
 
     if (itemsRead != 1) {
-        printf("No key codes file found");
+        printf("FILE EMPTY: No key codes file found\n");
         game->upKeyCode = 87;
         game->downKeyCode = 83;
         game->leftKeyCode = 65;
@@ -726,7 +725,8 @@ void Game_Update(GameHandler *handler) {
 }
 
 
-void Game_Render(Game *game, HWND hwnd) {
+void Game_Render(GameHandler *handler, HWND hwnd) {
+    Game *game = &handler->game;
     if (game == NULL || hwnd == NULL) return;
 
     HDC hdc = GetDC(hwnd);
@@ -832,8 +832,10 @@ void Game_Render(Game *game, HWND hwnd) {
     Coin_Render(game, game->coins, game->coinCount, hdc, bufferDC);
     Carousel_Render(game, hdc, bufferDC);
     Cannon_Render(game, hdc, bufferDC);
-    Score_Render(game, hdc, bufferDC);
     Jet_Render(game, hdc, bufferDC);
+
+    Number_Render(game, SCORE_START_X, SCORE_START_Y, game->player.score, hdc, bufferDC);
+    Number_Render(game, FPS_X, FPS_Y, (int)handler->fps, hdc, bufferDC);
 
     BitBlt(hdc, 0, 0, game->camera.width, game->camera.height, bufferDC, 0, 0, SRCCOPY);
     SelectObject(bufferDC, oldBitmap);
@@ -989,7 +991,7 @@ static void Barrel_Update(Game *game) {
     }
 }
 
-void Number_Render(Game *game, int x, int y, int num, HDC hdc, HDC bufferDC) {
+void Number_Render(Game *game, int startX, int startY, int num, HDC hdc, HDC bufferDC) {
     int count = 0;
     int digits[20];
 
@@ -998,8 +1000,8 @@ void Number_Render(Game *game, int x, int y, int num, HDC hdc, HDC bufferDC) {
         SelectObject(scoreDC, game->scoreImg);
         TransparentBlt(
             bufferDC,
-            x,
-            y,
+            startX,
+            startY,
             NUMBERS_FRAME_WIDTH,
             NUMBERS_FRAME_HEIGHT,
             scoreDC,
@@ -1021,8 +1023,8 @@ void Number_Render(Game *game, int x, int y, int num, HDC hdc, HDC bufferDC) {
 
     for (int i = count - 1; i >= 0; i--) {
         int j = (count - 1) - i;
-        int x = (NUMBERS_FRAME_WIDTH * j) + x;
-        int y = y;
+        int x = (NUMBERS_FRAME_WIDTH * j) + startX;
+        int y = startY;
         HDC scoreDC = CreateCompatibleDC(hdc);
         SelectObject(scoreDC, game->scoreImg);
         int srcX = digits[i] * NUMBERS_FRAME_WIDTH;
@@ -1043,60 +1045,7 @@ void Number_Render(Game *game, int x, int y, int num, HDC hdc, HDC bufferDC) {
     }
 }
 
-static void Score_Render(Game *game, HDC hdc, HDC bufferDC) {
-    int temp = game->player.score;
-    int count = 0;
-    int digits[20];
 
-    if (temp == 0) {
-        HDC scoreDC = CreateCompatibleDC(hdc);
-        SelectObject(scoreDC, game->scoreImg);
-        TransparentBlt(
-            bufferDC,
-            20,
-            10,
-            NUMBERS_FRAME_WIDTH,
-            NUMBERS_FRAME_HEIGHT,
-            scoreDC,
-            0,
-            0,
-            NUMBERS_FRAME_WIDTH,
-            NUMBERS_FRAME_HEIGHT,
-            RGB(0, 0, 0)
-        );
-        DeleteDC(scoreDC);
-        return;
-    }
-
-    while (temp > 0) {
-        digits[count] = temp % 10;
-        count++;
-        temp /= 10;
-    }
-
-    for (int i = count - 1; i >= 0; i--) {
-        int j = (count - 1) - i;
-        int x = (16 * j) + 20;
-        int y = 10;
-        HDC scoreDC = CreateCompatibleDC(hdc);
-        SelectObject(scoreDC, game->scoreImg);
-        int srcX = digits[i] * NUMBERS_FRAME_WIDTH;
-        TransparentBlt(
-            bufferDC,
-            x,
-            y,
-            NUMBERS_FRAME_WIDTH,
-            NUMBERS_FRAME_HEIGHT,
-            scoreDC,
-            srcX,
-            0,
-            NUMBERS_FRAME_WIDTH,
-            NUMBERS_FRAME_HEIGHT,
-            RGB(0, 0, 0)
-        );
-        DeleteDC(scoreDC);
-    }
-}
 
 void Spawn_Render(Game *game, Spawn spawns[], int spawnCount, HDC hdc, HDC bufferDC) {
     for (int i = 0; i < spawnCount; i++) {

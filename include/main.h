@@ -5,8 +5,11 @@
 #include "window.h"
 #include "handler.h"
 
-#define WIDTH 810
+#define WIDTH  810
 #define HEIGHT 610
+#define FPS    30
+#define FPS_X  750
+#define FPS_Y  20
 #define GAME_TITLE "Super Shitty World"
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow);

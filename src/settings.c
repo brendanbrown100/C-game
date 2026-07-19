@@ -7,7 +7,6 @@
 
 static int Save_Key_Codes(Game *game);
 static int Get_KeyCode(Game *game, int type);
-static void Key_Code_Render(GameHandler *handler, int val, int y, HDC hdc, HDC bufferDC);
 
 void Settings_Init(Settings *settings) {
     for (int i = 0; i < TOTAL_SETTINGS_OPTIONS; i++) {
@@ -18,7 +17,7 @@ void Settings_Init(Settings *settings) {
         option->y = SETTINGS_OPTION_START_Y + (SETTINGS_OPTION_INCREMENT_Y * i);
         option->selected = 0;
         option->changingKeyState = 0;
-        option->remapDelay = 0;
+        option->remapDelay = 50;
     }
     settings->options[0].selected = 1;
     Load_Image(&settings->options[UP_KEY_OPTION].optionImg, UP_KEY_IMG_PATH);
@@ -76,13 +75,11 @@ void Settings_Update(GameHandler *handler) {
              virtualCode < 256;
              virtualCode++) {
 
-            SHORT keyState =
-                GetAsyncKeyState(virtualCode);
+            SHORT keyState = GetAsyncKeyState(virtualCode);
 
             if (!(keyState & 0x0001)) {
                 continue;
             }
-
 
             printf(
                 "Detected input: %d | Hex: 0x%02X\n",
@@ -328,7 +325,7 @@ void Settings_Render(GameHandler *handler, HWND hwnd) {
         SelectObject(settingsDC, oldimage);
 
         int value = Get_KeyCode(&handler->game, option->type);
-        Key_Code_Render(handler, value, option->y, hdc, bufferDC);
+        Number_Render(&handler->game, KEY_CODE_VAL_X, option->y, value, hdc, bufferDC);
     }
     BitBlt(
         hdc,
@@ -342,6 +339,8 @@ void Settings_Render(GameHandler *handler, HWND hwnd) {
         SRCCOPY
     );
     DeleteDC(settingsDC);
+
+    Number_Render(&handler->game, FPS_X, FPS_Y, (int)handler->fps, hdc, bufferDC);
 
     SelectObject(bufferDC, oldBuffer);
     DeleteObject(bufferBitmap);
@@ -367,44 +366,7 @@ static int Get_KeyCode(Game *game, int type) {
     }
 }
 
-void Key_Code_Render(GameHandler *handler, int val, int y, HDC hdc, HDC bufferDC) {
-    Game *game = &handler->game;
-    int temp = val;
-    int count = 0;
-    int digits[20];
 
-    if (temp == 0) {
-        return;
-    }
-
-    while (temp > 0) {
-        digits[count] = temp % 10;
-        count++;
-        temp /= 10;
-    }
-
-    for (int i = count - 1; i >= 0; i--) {
-        int j = (count - 1) - i;
-        int x = (NUMBERS_FRAME_WIDTH * j) + 275;
-        HDC keyCodeDC = CreateCompatibleDC(hdc);
-        SelectObject(keyCodeDC, game->scoreImg);
-        int srcX = digits[i] * NUMBERS_FRAME_WIDTH;
-        TransparentBlt(
-            bufferDC,
-            x,
-            y,
-            NUMBERS_FRAME_WIDTH,
-            NUMBERS_FRAME_HEIGHT,
-            keyCodeDC,
-            srcX,
-            0,
-            NUMBERS_FRAME_WIDTH,
-            NUMBERS_FRAME_HEIGHT,
-            RGB(0, 0, 0)
-        );
-        DeleteDC(keyCodeDC);
-    }
-}
 
 
 static int Save_Key_Codes(Game *game) {

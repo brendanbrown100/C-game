@@ -165,6 +165,8 @@ void Home_Render(Menu *menu, HWND hwnd) {
     );
     DeleteDC(homeDC);
 
+
+    
     SelectObject(bufferDC, oldBuffer);
     DeleteObject(bufferBitmap);
     DeleteDC(bufferDC);

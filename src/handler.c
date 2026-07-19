@@ -12,6 +12,7 @@ int Handler_Init(GameHandler *handler) {
     Settings_Init(&handler->settingsMenu);
 
     handler->currState = MENU;
+    handler->fps = 0;
     return 1;
 }
 
@@ -44,7 +45,7 @@ void Handler_Render(GameHandler *handler, HWND hwnd) {
             Home_Render(&handler->menu, hwnd);
             break;
         case PLAYING: 
-            Game_Render(&handler->game, hwnd);
+            Game_Render(handler, hwnd);
             break;
         case PAUSED:
             Pause_Render(&handler->pauseMenu, hwnd);

@@ -160,6 +160,7 @@ void Pause_Render(PauseMenu *pauseMenu, HWND hwnd) {
     );
     DeleteDC(pauseDC);
 
+
     SelectObject(bufferDC, oldBuffer);
     DeleteObject(bufferBitmap);
     DeleteDC(bufferDC);

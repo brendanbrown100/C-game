@@ -21,6 +21,8 @@ typedef struct GameHandler {
     Settings settingsMenu;
 
     GameState currState;
+
+    double fps;
 } GameHandler;
 
 
