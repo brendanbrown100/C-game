@@ -166,7 +166,7 @@ static void Archer_Anim_Init(Enemy *enemy) {
 
 void Enemy_Update(Game *game) {
     Arrow_Update(game);
-    Level *level = &game->levels[game->currentLevel];
+    Level *level = &game->level;
 
     for (int i = 0; i < level->enemyCount; i++) {
         Enemy *enemy = &level->enemies[i];
@@ -279,8 +279,8 @@ static void Archer_Attacking(Game *game, Enemy *enemy, Animation *anim, int fini
 }
 
 void Enemy_Render(Game *game, HDC hdc, HDC bufferDC) {
-    Enemy *enemies = game->levels[game->currentLevel].enemies;
-    int enemyCount = game->levels[game->currentLevel].enemyCount;
+    Enemy *enemies = game->level.enemies;
+    int enemyCount = game->level.enemyCount;
 
     for (int i = 0; i < enemyCount; i++) {
         if (enemies[i].remove) continue;
@@ -534,7 +534,7 @@ static int Enemy_Can_Attack(Game *game, Enemy *enemy) {
         if (dy > 0) enemy->direction = ENEMY_UP;
         else enemy->direction = ENEMY_DOWN;
     }
-    enemy->attackCoolDown = game->levels[game->currentLevel].enemyAttackCooldown;
+    enemy->attackCoolDown = game->level.enemyAttackCooldown;
     return 1;
 }
 
@@ -655,7 +655,7 @@ void Enemy_Start_Knockback(Game *game, Enemy *enemy)
 
 
 static int Enemy_FindPathBFS(Game *game, Enemy *enemy) {
-    Level *level = &game->levels[game->currentLevel];
+    Level *level = &game->level;
     Player *player = &game->player;
 
     int startX = (enemy->x + enemy->hitboxOffsetX + enemy->hitboxWidth / 2) / TILE_SIZE;

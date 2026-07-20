@@ -140,7 +140,7 @@ int Game_Init(Game *game) {
 }
 
 int Game_InitLevel(Game *game, const char *levelPath) {
-    Level *level = &game->levels[game->currentLevel];
+    Level *level = &game->level;
     
     level->spawnCount = 0;
     game->coinCount = 0;
@@ -715,7 +715,7 @@ int Game_Restart_Current_Level(Game *game) {
 
 
 int Spawn_Init(Game *game, int x, int y, SpawnType type) {
-    Level *level = &game->levels[game->currentLevel];
+    Level *level = &game->level;
 
     if (level->spawnCount >= MAX_SPAWNS) {
         printf("FAILED TO INITILIZE SPAWN: TOO MANY SPAWNS\n");
@@ -750,7 +750,7 @@ void Game_Update(GameHandler *handler) {
     }
 
     if (Level_Won(&handler->game)) {
-        handler->game.levels[handler->game.currentLevel].tiles[handler->game.levels[handler->game.currentLevel].goalIndex] = TILE_GOAL_OPEN;
+        handler->game.level.tiles[handler->game.level.goalIndex] = TILE_GOAL_OPEN;
     }
 }
 
@@ -769,7 +769,7 @@ void Game_Render(GameHandler *handler, HWND hwnd) {
 
     FillRect(bufferDC, &screenRect, (HBRUSH)(COLOR_WINDOW + 1)); // default background
 
-    Level *level = &game->levels[game->currentLevel];
+    Level *level = &game->level;
 
     int startCol = game->camera.x / TILE_SIZE;
     int endCol = (game->camera.x + game->camera.width) / TILE_SIZE;
@@ -877,7 +877,7 @@ void Game_Render(GameHandler *handler, HWND hwnd) {
 }
 
 static void Barrel_Update(Game *game) {
-    Level *level = &game->levels[game->currentLevel];
+    Level *level = &game->level;
     Player *player = &game->player;
 
     for (int i = 0; i < game->barrelCount; i++) {
@@ -1214,7 +1214,7 @@ void Game_Next_Level(Game *game) {
 }
 
 static int Level_Won(Game *game) {
-    Level *level = &game->levels[game->currentLevel];
+    Level *level = &game->level;
     for (int i = 0; i < level->enemyCount; i++) {
         if (!level->enemies[i].remove) return 0;
     }
@@ -1489,7 +1489,7 @@ int Animation_Update(Animation *animation, int direction) {
 
 static void Game_UpdateCamera(Game *game)
 {
-    Level *level = &game->levels[game->currentLevel];
+    Level *level = &game->level;
 
     int levelWidth = level->width * TILE_SIZE;
     int levelHeight = level->height * TILE_SIZE;
@@ -1556,7 +1556,7 @@ void Load_Image(HBITMAP *bitmap, const char *path) {
 
 
 int Collision_Check(Game *game, int newX, int newY, int hitboxWidth, int hitboxHeight, int hitboxOffsetX, int hitboxOffsetY) {
-    Level *level = &game->levels[game->currentLevel];
+    Level *level = &game->level;
     
     int hitboxX = newX + hitboxOffsetX;
     int hitboxY = newY + hitboxOffsetY;
@@ -1584,7 +1584,7 @@ int Collision_Check(Game *game, int newX, int newY, int hitboxWidth, int hitboxH
 }
 
 int Check_Fall(Game *game, int newX, int newY, int hitboxWidth, int hitboxHeight, int hitboxOffsetX, int hitboxOffsetY) {
-    Level *level = &game->levels[game->currentLevel];
+    Level *level = &game->level;
 
     int hitboxX = newX + hitboxOffsetX;
     int hitboxY = newY + hitboxOffsetY;

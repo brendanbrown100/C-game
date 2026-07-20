@@ -699,7 +699,7 @@ static void Player_Update_Dash(Game *game) {
 
 static void Check_Player_Spawn(Game *game) {
     Player *player = &game->player;
-    Level *level = &game->levels[game->currentLevel];
+    Level *level = &game->level;
     for (int i = 0; i < level->spawnCount; i++) {
         Spawn *spawn = &level->spawns[i];
         if (spawn->remove) continue;
@@ -733,7 +733,7 @@ static void Check_Player_Coin(Game *game) {
 
 static void Check_Player_Interact(Game *game) {
     Player *player = &game->player; 
-    Level *level = &game->levels[game->currentLevel];
+    Level *level = &game->level;
 
     if (level->tiles[level->goalIndex] == TILE_GOAL_OPEN) {
         if (RectsOverlap(
@@ -839,7 +839,7 @@ static void Drop_Barrel(Game *game) {
 
 static void Player_CheckAttackHit(Game *game) {
     Player *player = &game->player;
-    Level *level = &game->levels[game->currentLevel];
+    Level *level = &game->level;
 
     if (!player->attacking)
         return;
@@ -879,7 +879,7 @@ static void Player_CheckAttackHit(Game *game) {
 }
 
 static int Check_Enemy_Collision(Game *game, int playerX, int playerY) {
-    Level *level = &game->levels[game->currentLevel];
+    Level *level = &game->level;
 
     int bodyX = playerX + game->player.hitboxOffsetX;
     int bodyY = playerY + game->player.hitboxOffsetY;

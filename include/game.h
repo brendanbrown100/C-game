@@ -306,7 +306,7 @@ typedef struct Barrel {
 
 
 typedef struct Game {
-    Level levels[MAX_LEVELS];
+    Level level;
     Player player;
     Camera camera;
     Carousel carousels[MAX_CAROUSELS];
