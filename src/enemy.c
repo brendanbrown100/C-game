@@ -26,10 +26,6 @@ void Enemy_Init(Level *level) {
     for (int i = 0; i < level->enemyCount; i++) {
         Enemy *enemy = &level->enemies[i];
         if (!enemy->x || !enemy->y) break;
-        enemy->hitboxWidth = ENEMY_WIDTH;
-        enemy->hitboxHeight = ENEMY_HEIGHT;
-        enemy->hitboxOffsetX = (FRAME_WIDTH - ENEMY_WIDTH) / 2;
-        enemy->hitboxOffsetY = (FRAME_HEIGHT - ENEMY_HEIGHT) / 2;
         enemy->spriteWidth = ENEMY_FRAME_WIDTH;
         enemy->spriteHeight = ENEMY_FRAME_HEIGHT;
         enemy->speed = level->enemySpeed + (rand() % 3) - 1;
@@ -293,10 +289,10 @@ void Enemy_Render(Game *game, HDC hdc, HDC bufferDC) {
         int enemyScreenX = enemies[i].x - game->camera.x;
         int enemyScreenY = enemies[i].y - game->camera.y;
 
-        if (enemyScreenX < -ENEMY_WIDTH || 
-            enemyScreenX > game->camera.width + ENEMY_WIDTH || 
-            enemyScreenY < -ENEMY_HEIGHT || 
-            enemyScreenY > game->camera.height + ENEMY_HEIGHT) continue;
+        if (enemyScreenX < -enemies[i].spriteWidth || 
+            enemyScreenX > game->camera.width + enemies[i].spriteWidth || 
+            enemyScreenY < -enemies[i].spriteHeight || 
+            enemyScreenY > game->camera.height + enemies[i].spriteHeight) continue;
 
         HDC spriteDC = CreateCompatibleDC(hdc);
         SelectObject(spriteDC, currentAnim->image);

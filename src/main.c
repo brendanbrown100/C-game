@@ -21,16 +21,17 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         return 0;
     }
 
-    GameHandler handler = {0};
+    GameHandler *handler = (GameHandler*) malloc(sizeof(GameHandler));
+    if (handler == NULL) {
+        printf("ERROR: MALLOC FAILED\n");
+    }
 
-    if (!Handler_Init(&handler))
+    if (!Handler_Init(handler))
     {
         return 0;
     }
 
     MSG msg = {0};
-
-    double timePerFrame = 1.0 / FPS;
 
     while (1)
     {
@@ -50,24 +51,26 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         }
         if (GetAsyncKeyState(VK_ESCAPE) & 0x0001) {
             PostMessage(window.hwnd, WM_CLOSE, 0, 0);
+            free(handler);
         }
 
-        Handler_Update(&handler);
-        Handler_Render(&handler, window.hwnd);
+        Handler_Update(handler);
+        Handler_Render(handler, window.hwnd);
         
 
         finish = clock();
         duration = (double)(finish - start) / CLOCKS_PER_SEC;
-        if (duration < timePerFrame) {
-            waitTime = timePerFrame - duration;
-            do_sleep((clock_t)(waitTime * CLOCKS_PER_SEC));
+        if (duration < TIME_PER_FRAME) {
+            waitTime = TIME_PER_FRAME - duration;
+            Sleep((int)(waitTime * 1000));
         }
         else {
-            printf("ERROR: GAME UPDATE TOO LONG FOR %d FPS - %.3f > %.3f\n", FPS, duration, timePerFrame);
+            printf("ERROR: GAME UPDATE TOO LONG FOR %d FPS - %.3f > %.3f\n", FPS, duration, TIME_PER_FRAME);
         }
         final = clock();
         duration = (double)(final - start) / CLOCKS_PER_SEC;
-        handler.fps = 1.0 / duration;
+        handler->game.time += duration;
+        handler->fps = 1.0 / duration;
     }
     return (int)msg.wParam;
 }

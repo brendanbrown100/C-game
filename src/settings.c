@@ -372,17 +372,6 @@ static int Get_KeyCode(Game *game, int type) {
 static int Save_Key_Codes(Game *game) {
     KeyCodeData data = {0};
 
-    // printf("left: %d\n", game->leftKeyCode);
-    // printf("right: %d\n", game->rightKeyCode);
-    // printf("up: %d\n", game->upKeyCode);
-    // printf("down: %d\n", game->downKeyCode);
-    // printf("sprint: %d\n", game->sprintKeyCode);
-    // printf("dash: %d\n", game->dashKeyCode);
-    // printf("attack: %d\n", game->attackKeyCode);
-    // printf("interact: %d\n", game->interactKeyCode);
-    // printf("select: %d\n", game->selectKeyCode);
-    // printf("pause: %d\n", game->pauseKeyCode);
-
     data.upKeyCode = game->upKeyCode;
     data.leftKeyCode = game->leftKeyCode;
     data.rightKeyCode = game->rightKeyCode;

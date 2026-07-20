@@ -881,8 +881,8 @@ static void Player_CheckAttackHit(Game *game) {
 static int Check_Enemy_Collision(Game *game, int playerX, int playerY) {
     Level *level = &game->levels[game->currentLevel];
 
-    playerX += game->player.hitboxOffsetX;
-    playerY += game->player.hitboxOffsetY;
+    int bodyX = playerX + game->player.hitboxOffsetX;
+    int bodyY = playerY + game->player.hitboxOffsetY;
 
     for (int i = 0; i < level->enemyCount; i++) {
         Enemy *enemy = &level->enemies[i];
@@ -891,7 +891,7 @@ static int Check_Enemy_Collision(Game *game, int playerX, int playerY) {
         int enemyX = enemy->x + enemy->hitboxOffsetX;
         int enemyY = enemy->y + enemy->hitboxOffsetY;
 
-        if (RectsOverlap(playerX, playerY,
+        if (RectsOverlap(bodyX, bodyY,
                         game->player.hitboxWidth, game->player.hitboxHeight,
                         enemyX, enemyY, enemy->hitboxWidth, enemy->hitboxHeight)) {
                             return 1;
@@ -910,12 +910,26 @@ static int Check_Enemy_Collision(Game *game, int playerX, int playerY) {
 static int Cannon_Player_Collision(Game *game, Cannon *cannon, int playerX, int playerY) {
     Player *player = &game->player;
 
-    playerX += player->hitboxOffsetX;
-    playerY += player->hitboxOffsetY;
+    int bodyX = playerX + player->hitboxOffsetX;
+    int bodyY = playerY + player->hitboxOffsetY;
 
-    if (RectsOverlap(playerX, playerY, player->hitboxWidth, player->hitboxHeight, cannon->x, cannon->y, CANNON_FRAME_WIDTH, CANNON_FRAME_HEIGHT)) {
-        return 1;
-    }
+    RECT playerCollisionBox;
+    playerCollisionBox.left = bodyX;
+    playerCollisionBox.top = bodyY;
+    playerCollisionBox.right = bodyX + player->hitboxWidth;
+    playerCollisionBox.bottom = bodyY + player->hitboxHeight;
+
+    int cannonX = cannon->x + CANNON_HITBOXOFFSET_X;
+    int cannonY = cannon->y + CANNON_HITBOXOFFSET_Y;
+
+    RECT cannonCollisionBox;
+    cannonCollisionBox.left = cannonX;
+    cannonCollisionBox.top = cannonY;
+    cannonCollisionBox.right = cannonX + CANNON_HITBOX_WIDTH;
+    cannonCollisionBox.bottom = cannonY + CANNON_HITBOX_HEIGHT;
+
+
+    if (Rect_Overlap(playerCollisionBox, cannonCollisionBox)) return 1;
     return 0;
 }
 

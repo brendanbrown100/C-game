@@ -44,7 +44,7 @@
 #define LEVEL_WIDTH 206
 #define LEVEL_HEIGHT 100
 
-#define MAX_LEVELS 10
+#define MAX_LEVELS 15
 #define MAX_SPAWNS 10
 #define MAX_COINS 100
 #define MAX_CAROUSELS 50
@@ -351,6 +351,8 @@ typedef struct Game {
     HBITMAP barrelHorizAnim;
     HBITMAP barrelVertAnim; 
 
+    float time;
+    
     int levelCount;
     int currentLevel;
     

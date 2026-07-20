@@ -7,9 +7,10 @@
 
 #define WIDTH  810
 #define HEIGHT 610
-#define FPS    30
+#define FPS    32
+#define TIME_PER_FRAME 0.03125
 #define FPS_X  750
-#define FPS_Y  20
+#define FPS_Y  10
 #define GAME_TITLE "Super Shitty World"
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow);

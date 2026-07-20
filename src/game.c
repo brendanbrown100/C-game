@@ -150,6 +150,8 @@ int Game_InitLevel(Game *game, const char *levelPath) {
     game->jetCount = 0;
     game->barrelCount = 0;
 
+    game->time = 0.0;
+
     if (level->tiles) {
         free(level->tiles);
         level->tiles = NULL;
@@ -286,6 +288,10 @@ int Game_InitLevel(Game *game, const char *levelPath) {
                         level->enemies[level->enemyCount].x = col * TILE_SIZE;
                         level->enemies[level->enemyCount].y = row * TILE_SIZE;
                         level->enemies[level->enemyCount].type = MELEE;
+                        level->enemies[level->enemyCount].hitboxWidth = ENEMY_WIDTH;
+                        level->enemies[level->enemyCount].hitboxHeight = ENEMY_HEIGHT;
+                        level->enemies[level->enemyCount].hitboxOffsetX = (ENEMY_FRAME_WIDTH - ENEMY_WIDTH) / 2;
+                        level->enemies[level->enemyCount].hitboxOffsetY = (ENEMY_FRAME_HEIGHT - ENEMY_HEIGHT) / 2;
                         level->enemyCount++;
                     } else {
                         printf("FAILED TO INITILIZE ENEMY: TOO MANY ENEMIES\n");
@@ -296,6 +302,10 @@ int Game_InitLevel(Game *game, const char *levelPath) {
                         level->enemies[level->enemyCount].x = col * TILE_SIZE;
                         level->enemies[level->enemyCount].y = row * TILE_SIZE;
                         level->enemies[level->enemyCount].type = ARCHER;
+                        level->enemies[level->enemyCount].hitboxWidth = ARCHER_WIDTH;
+                        level->enemies[level->enemyCount].hitboxHeight = ARCHER_HEIGHT;
+                        level->enemies[level->enemyCount].hitboxOffsetX = (ENEMY_FRAME_WIDTH - ARCHER_WIDTH) / 2;
+                        level->enemies[level->enemyCount].hitboxOffsetY = (ENEMY_FRAME_HEIGHT - ARCHER_HEIGHT) / 2;
                         level->enemyCount++;
                     } else {
                         printf("FAILED TO INITILIZE ENEMY: TOO MANY ENEMIES\n");
@@ -845,17 +855,18 @@ void Game_Render(GameHandler *handler, HWND hwnd) {
     }
 
     Player *player = &game->player;
+    Coin_Render(game, game->coins, game->coinCount, hdc, bufferDC);
+    Spawn_Render(game, level->spawns, level->spawnCount, hdc, bufferDC);
     Barrel_Render(game, hdc, bufferDC);
     Player_Render(player, game, hdc, bufferDC);
-    Enemy_Render(game, hdc, bufferDC);
-    Spawn_Render(game, level->spawns, level->spawnCount, hdc, bufferDC);
-    Coin_Render(game, game->coins, game->coinCount, hdc, bufferDC);
     Carousel_Render(game, hdc, bufferDC);
     Cannon_Render(game, hdc, bufferDC);
     Jet_Render(game, hdc, bufferDC);
+    Enemy_Render(game, hdc, bufferDC);
 
     Number_Render(game, SCORE_START_X, SCORE_START_Y, game->player.score, hdc, bufferDC);
     Number_Render(game, FPS_X, FPS_Y, (int)handler->fps, hdc, bufferDC);
+    Number_Render(game, 750, 30, (int)game->time, hdc, bufferDC);
 
     BitBlt(hdc, 0, 0, game->camera.width, game->camera.height, bufferDC, 0, 0, SRCCOPY);
     SelectObject(bufferDC, oldBitmap);
@@ -1550,10 +1561,10 @@ int Collision_Check(Game *game, int newX, int newY, int hitboxWidth, int hitboxH
     int hitboxX = newX + hitboxOffsetX;
     int hitboxY = newY + hitboxOffsetY;
 
-    int left = (hitboxX + 8) / TILE_SIZE;
-    int right = (hitboxX + hitboxWidth - 9) / TILE_SIZE;
-    int top = (hitboxY + 8) / TILE_SIZE;
-    int bottom = (hitboxY + hitboxHeight - 9) / TILE_SIZE;
+    int left = (hitboxX) / TILE_SIZE;
+    int right = (hitboxX + hitboxWidth) / TILE_SIZE;
+    int top = (hitboxY) / TILE_SIZE;
+    int bottom = (hitboxY + hitboxHeight) / TILE_SIZE;
 
     if (left < 0 || right >= level->width || top < 0 || bottom >= level->height) {
         return 1;
@@ -1578,10 +1589,10 @@ int Check_Fall(Game *game, int newX, int newY, int hitboxWidth, int hitboxHeight
     int hitboxX = newX + hitboxOffsetX;
     int hitboxY = newY + hitboxOffsetY;
 
-    int feetHeight = 6;
+    int feetHeight = 3;
 
-    int feetLeft = (hitboxX + 10) / TILE_SIZE;
-    int feetRight = (hitboxX + hitboxWidth - 11) / TILE_SIZE;
+    int feetLeft = (hitboxX + 5) / TILE_SIZE;
+    int feetRight = (hitboxX + hitboxWidth - 5) / TILE_SIZE;
     int feetY = (hitboxY + hitboxHeight - feetHeight) / TILE_SIZE;
 
     if (feetLeft < 0 ||
