@@ -13,7 +13,7 @@ static void Print_Save(GameData data) {
     printf("\nCurrent Save Data:\n");
     printf("Health: %d\n", data.health);
     printf("Score : %d\n", data.score);
-    printf("Level : %d\n", data.level);
+    printf("Level : %d\n", data.level + 1);
 }
 
 int main(void) {

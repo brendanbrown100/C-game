@@ -17,7 +17,7 @@ void Settings_Init(Settings *settings) {
         option->y = SETTINGS_OPTION_START_Y + (SETTINGS_OPTION_INCREMENT_Y * i);
         option->selected = 0;
         option->changingKeyState = 0;
-        option->remapDelay = 50;
+        option->remapDelay = 30;
     }
     settings->options[0].selected = 1;
     Load_Image(&settings->options[UP_KEY_OPTION].optionImg, UP_KEY_IMG_PATH);
@@ -325,7 +325,7 @@ void Settings_Render(GameHandler *handler, HWND hwnd) {
         SelectObject(settingsDC, oldimage);
 
         int value = Get_KeyCode(&handler->game, option->type);
-        Number_Render(&handler->game, KEY_CODE_VAL_X, option->y, value, hdc, bufferDC);
+        if (value) Number_Render(&handler->game, KEY_CODE_VAL_X, option->y, value, hdc, bufferDC);
     }
     BitBlt(
         hdc,

@@ -287,6 +287,8 @@ int Game_InitLevel(Game *game, const char *levelPath) {
                         level->enemies[level->enemyCount].y = row * TILE_SIZE;
                         level->enemies[level->enemyCount].type = MELEE;
                         level->enemyCount++;
+                    } else {
+                        printf("FAILED TO INITILIZE ENEMY: TOO MANY ENEMIES\n");
                     }
                     break;
                 case ARCHER_TILE:
@@ -295,6 +297,8 @@ int Game_InitLevel(Game *game, const char *levelPath) {
                         level->enemies[level->enemyCount].y = row * TILE_SIZE;
                         level->enemies[level->enemyCount].type = ARCHER;
                         level->enemyCount++;
+                    } else {
+                        printf("FAILED TO INITILIZE ENEMY: TOO MANY ENEMIES\n");
                     }
                     break;
                 case GOAL_TILE:
@@ -307,6 +311,8 @@ int Game_InitLevel(Game *game, const char *levelPath) {
                         game->carousels[game->carouselCount].y = row * TILE_SIZE - (CAROUSEL_FRAME_HEIGHT / 2) + (TILE_SIZE / 2);
                         game->carousels[game->carouselCount].clockWise = 0;
                         game->carouselCount++;
+                    } else {
+                        printf("FAILED TO INITILIZE CAROUSEL: TOO MANY CAROUSELS\n");
                     }
                     break;
                 case CAROUSEL_CW_TILE:
@@ -315,6 +321,8 @@ int Game_InitLevel(Game *game, const char *levelPath) {
                         game->carousels[game->carouselCount].y = row * TILE_SIZE - (CAROUSEL_FRAME_HEIGHT / 2) + (TILE_SIZE / 2);
                         game->carousels[game->carouselCount].clockWise = 1;
                         game->carouselCount++;
+                    } else {
+                        printf("FAILED TO INITILIZE CAROUSEL: TOO MANY CAROUSELS\n");
                     }
                     break;
                 case CANNON_UP:
@@ -323,6 +331,8 @@ int Game_InitLevel(Game *game, const char *levelPath) {
                         game->cannons[game->cannonCount].y = row * TILE_SIZE;
                         game->cannons[game->cannonCount].direction = DIR_UP;
                         game->cannonCount++;
+                    } else {
+                        printf("FAILED TO INITILIZE CANNON: TOO MANY CANNONS\n");
                     }
                     break;
                 case CANNON_DOWN:
@@ -331,6 +341,8 @@ int Game_InitLevel(Game *game, const char *levelPath) {
                         game->cannons[game->cannonCount].y = row * TILE_SIZE;
                         game->cannons[game->cannonCount].direction = DIR_DOWN;
                         game->cannonCount++;
+                    } else {
+                        printf("FAILED TO INITILIZE CANNON: TOO MANY CANNONS\n");
                     }
                     break;
                 case CANNON_LEFT:
@@ -339,6 +351,8 @@ int Game_InitLevel(Game *game, const char *levelPath) {
                         game->cannons[game->cannonCount].y = row * TILE_SIZE;
                         game->cannons[game->cannonCount].direction = DIR_LEFT;
                         game->cannonCount++;
+                    } else {
+                        printf("FAILED TO INITILIZE CANNON: TOO MANY CANNONS\n");
                     }
                     break;
                 case CANNON_RIGHT:
@@ -347,6 +361,8 @@ int Game_InitLevel(Game *game, const char *levelPath) {
                         game->cannons[game->cannonCount].y = row * TILE_SIZE;
                         game->cannons[game->cannonCount].direction = DIR_RIGHT;
                         game->cannonCount++;
+                    } else {
+                        printf("FAILED TO INITILIZE CANNON: TOO MANY CANNONS\n");
                     }
                     break;
                 case COIN_TILE:
@@ -691,7 +707,10 @@ int Game_Restart_Current_Level(Game *game) {
 int Spawn_Init(Game *game, int x, int y, SpawnType type) {
     Level *level = &game->levels[game->currentLevel];
 
-    if (level->spawnCount >= MAX_SPAWNS) return 0;
+    if (level->spawnCount >= MAX_SPAWNS) {
+        printf("FAILED TO INITILIZE SPAWN: TOO MANY SPAWNS\n");
+        return 0;
+    }
     
     Spawn *spawn = &level->spawns[level->spawnCount++];
     spawn->x = x;

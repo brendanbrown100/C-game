@@ -115,6 +115,24 @@ typedef enum PlayerState {
 } PlayerState;
 
 typedef struct Player {
+    Animation dash;
+    Animation barrelIdle;
+    Animation barrelWalk;
+    Animation barrelRun;
+    Animation barrelThrowIdle;
+    Animation barrelThrowWalk;
+    Animation barrelThrowRun;
+    Animation idle;
+    Animation walk;
+    Animation run;
+    Animation healthBar;
+    Animation idleAttack;
+    Animation walkAttack;
+    Animation runAttack;
+    Animation hurt;
+    Animation death;
+    PlayerState state;
+
     int x;
     int y;
     int hitboxWidth;
@@ -158,24 +176,6 @@ typedef struct Player {
     int barrelThrown;
 
     int carriedBarrelIndex;
-
-    Animation dash;
-    Animation barrelIdle;
-    Animation barrelWalk;
-    Animation barrelRun;
-    Animation barrelThrowIdle;
-    Animation barrelThrowWalk;
-    Animation barrelThrowRun;
-    Animation idle;
-    Animation walk;
-    Animation run;
-    Animation healthBar;
-    Animation idleAttack;
-    Animation walkAttack;
-    Animation runAttack;
-    Animation hurt;
-    Animation death;
-    PlayerState state;
 } Player;
 
 void Player_Init(Game *game, Level *level);

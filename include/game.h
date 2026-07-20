@@ -48,7 +48,7 @@
 #define MAX_SPAWNS 10
 #define MAX_COINS 100
 #define MAX_CAROUSELS 50
-#define MAX_CANNONS 30
+#define MAX_CANNONS 100
 #define MAX_ARROWS 50
 #define MAX_JETS 10
 #define MAX_BOMBS 10
@@ -220,6 +220,12 @@ typedef struct KeyCodeData {
 } KeyCodeData;
 
 typedef struct Level {
+    Enemy enemies[MAX_ENEMIES];
+    Spawn spawns[MAX_SPAWNS];
+
+    int enemyCount;
+    int spawnCount;
+
     int width;
     int height;
     int startX;
@@ -229,14 +235,8 @@ typedef struct Level {
     int enemyBoxDropProbability;
     int enemySpeed;
 
-    Spawn spawns[MAX_SPAWNS];
-    int spawnCount;
-
     int *tiles;
     int goalIndex;
-
-    Enemy enemies[MAX_ENEMIES];
-    int enemyCount;
 } Level;
 
 typedef struct Camera {
@@ -261,44 +261,44 @@ typedef struct Coin {
 } Coin;
 
 typedef struct Bomb {
+    NewAnimation anim;
     int x;
     int y;
 
-    int explode;
     int radius;
-
     int damage;
+
     int dealtDamage;
-
+    int explode;
     int remove;
-
-    NewAnimation anim;
 } Bomb;
 
 typedef struct Jet {
+    Bomb bomb;
+
+    NewAnimation anim;
+    
     int x;
     int y;
     int speed;
-    Bomb bomb;
 
     int remove;
-
-    NewAnimation anim;
 } Jet;
 
 typedef struct Barrel {
     int x;
     int y;
-    int dir;
-    int isVerticle;
 
-    int destroyed;
-    int pickedUp;
-
-    int thrown;
     int frame;
     int frameDelay;
     int speed;
+
+    int dir;
+
+    int isVerticle;
+    int destroyed;
+    int pickedUp;
+    int thrown;
 
     int remove;
 } Barrel;
@@ -306,45 +306,20 @@ typedef struct Barrel {
 
 
 typedef struct Game {
+    Level levels[MAX_LEVELS];
     Player player;
     Camera camera;
-
-    Level levels[MAX_LEVELS];
-    int levelCount;
-    int currentLevel;
-    int gameOver;
-    int gameWin;
-
-    int backToMenu;
-
-    Coin coins[MAX_COINS];
-    int coinCount;
-
     Carousel carousels[MAX_CAROUSELS];
-    int carouselCount;
-
     Cannon cannons[MAX_CANNONS];
-    int cannonCount;
-
+    Coin coins[MAX_COINS];
     Arrow arrows[MAX_ARROWS];
-    int arrowCount;
-
     Jet jets[MAX_JETS];
-    int jetCount;
-
     Barrel barrels[MAX_BARRELS];
-    int barrelCount;
 
-    int upKeyCode;
-    int downKeyCode;
-    int leftKeyCode;
-    int rightKeyCode;
-    int sprintKeyCode;
-    int dashKeyCode;
-    int attackKeyCode;
-    int interactKeyCode;
-    int selectKeyCode;
-    int pauseKeyCode;
+    Animation spawnAnim[BOX_COUNT];
+    Animation gameOverAnim;
+    Animation gameWinAnim;
+    Animation coinAnim;
 
     HBITMAP scoreImg;
 
@@ -376,10 +351,31 @@ typedef struct Game {
     HBITMAP barrelHorizAnim;
     HBITMAP barrelVertAnim; 
 
-    Animation spawnAnim[BOX_COUNT];
-    Animation gameOverAnim;
-    Animation gameWinAnim;
-    Animation coinAnim;
+    int levelCount;
+    int currentLevel;
+    
+    int carouselCount;
+    int cannonCount;
+    int coinCount;
+    int arrowCount;
+    int jetCount;
+    int barrelCount;
+
+    int gameOver;
+    int gameWin;
+
+    int backToMenu;
+
+    int upKeyCode;
+    int downKeyCode;
+    int leftKeyCode;
+    int rightKeyCode;
+    int sprintKeyCode;
+    int dashKeyCode;
+    int attackKeyCode;
+    int interactKeyCode;
+    int selectKeyCode;
+    int pauseKeyCode;
 } Game;
 
 

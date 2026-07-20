@@ -27,15 +27,15 @@
 typedef struct Game Game;
 
 typedef struct Carousel {
+    Animation anim;
+
     int x;
     int y;
     int damage;
-    int clockWise;
-
     int attackDelay;
+    
+    int clockWise;
     int attackHit;
-
-    Animation anim;
 
     int remove;
 } Carousel;

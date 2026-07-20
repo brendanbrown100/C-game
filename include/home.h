@@ -29,12 +29,13 @@ typedef enum MenuOptionType {
 
 
 typedef struct MenuOption {
+    MenuOptionType type;
+    HBITMAP img;
+    
     int x;
     int y;
     int show;
     int selected;
-    MenuOptionType type;
-    HBITMAP img;
 } MenuOption;
 
 

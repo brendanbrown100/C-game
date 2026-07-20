@@ -5,6 +5,7 @@
 
 typedef struct Window {
     HWND hwnd;
+    
     int width;
     int height;
 } Window;

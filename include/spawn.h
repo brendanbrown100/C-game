@@ -24,13 +24,13 @@ typedef enum SpawnType {
 
 
 typedef struct Spawn {
+    SpawnType type;
+    Animation anim;
+    
     int x;
     int y;
 
     int remove;
-
-    SpawnType type;
-    Animation anim;
 } Spawn;
 
 #endif

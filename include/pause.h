@@ -34,23 +34,24 @@ typedef enum PauseOptionType {
 
 
 typedef struct PauseOption {
+    PauseOptionType type;
+    HBITMAP img;
+
     int x;
     int y;
     int selected;
-    PauseOptionType type;
-    HBITMAP img;
 } PauseOption;
 
 
 
 typedef struct PauseMenu {
     PauseOption options[TOTAL_PAUSE_OPTIONS];
+    HBITMAP pausedTitle;
 
     int upWasDown;
     int downWasDown;
     int selectWasDown;
     int currSelected;
-    HBITMAP pausedTitle;
 } PauseMenu;
 
 void Pause_Init(PauseMenu *pauseMenu);

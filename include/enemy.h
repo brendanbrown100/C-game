@@ -120,6 +120,25 @@ typedef enum EnemyState {
 } EnemyState;
 
 typedef struct Enemy {
+    TilePos path[MAX_PATH_LENGTH];
+
+    Animation idle;
+    Animation run;
+    Animation idleAttack;
+    Animation runAttack;
+    Animation hurt;
+    Animation death;
+
+    EnemyType type;
+    EnemyState state;
+
+    float knockbackX;
+    float knockbackY;
+
+    int pathLength;
+    int pathIndex;
+    int pathTimer;
+
     int x;
     int y;
     int hitboxWidth;
@@ -131,45 +150,32 @@ typedef struct Enemy {
     int spriteHeight;
     int speed;
     int health;
-    int beenHit;
-    int dead;
-    int dying;
-    int remove;
+
+    int attackCoolDown;
 
     int moving;
     int direction;
     int attacking;
-    int attackHit;
-    int attackCoolDown;
     int knockbackApplied;
-    float knockbackX;
-    float knockbackY;
+    int attackHit;  
     int knockbackActive;
     int hasSpawn;
 
-    TilePos path[MAX_PATH_LENGTH];
-    int pathLength;
-    int pathIndex;
-    int pathTimer;
-
-    Animation idle;
-    Animation run;
-    Animation idleAttack;
-    Animation runAttack;
-    Animation hurt;
-    Animation death;
-
-    EnemyType type;
-    EnemyState state;
+    int beenHit;
+    int dead;
+    int dying;
+    int remove;
 } Enemy;
 
 typedef struct Arrow {
+    Direction8 direction;
+
     int x;
     int y;
 
-    Direction8 direction;
     int speed;
     int damage;
+    
     int remove;
 } Arrow;
 

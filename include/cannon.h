@@ -3,7 +3,7 @@
 
 #include "animation.h"
 
-#define MAX_BULLETS 30
+#define MAX_BULLETS 50
 
 #define CANNON_PATH "Assets/Sprites/Objects/cannon.bmp"
 #define BULLET_PATH "Assets/Sprites/Objects/bullet.bmp"
@@ -31,24 +31,22 @@ typedef struct Game Game;
 typedef struct Bullet {
     int x;
     int y;
+    int damage;
 
     int direction;
-
-    int damage;
 
     int remove;
 } Bullet;
 
 typedef struct Cannon {
+    Bullet bullets[MAX_BULLETS];
+    int bulletCount;
+
     int x;
     int y;
 
     int direction;
-
     int attackDelay;
-
-    Bullet bullets[MAX_BULLETS];
-    int bulletCount;
 
     int remove;
 } Cannon;

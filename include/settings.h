@@ -60,6 +60,7 @@ typedef struct Settings {
     SettingsOption options[TOTAL_SETTINGS_OPTIONS];
     HBITMAP settingsTitle;
     HBITMAP numbersImg;
+    
     int playing;
     int upWasDown;
     int downWasDown;
