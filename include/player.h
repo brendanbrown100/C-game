@@ -93,6 +93,7 @@
 #define PLAYER_END_ATTACK_FRAME 6
 
 typedef struct Game Game;
+typedef struct GameHandler GameHandler;
 typedef struct Level Level;
 typedef struct Barrel Barrel;
 
@@ -153,6 +154,7 @@ typedef struct Player {
     int score;
     int beenHit;
     int dead;
+    int remove;
 
     int moving;
     int sprinting;
@@ -178,8 +180,8 @@ typedef struct Player {
     int carriedBarrelIndex;
 } Player;
 
-void Player_Init(Game *game, Level *level);
-void Player_Update(Game *game);
-void Player_Render(Player *player, Game *game, HDC hdc, HDC bufferDC);
+void Player_Init(Game *game, Level *level, int pIndex);
+void Player_Update(GameHandler *handler, int pIndex);
+void Player_Render(Game *game, int pIndex, HDC hdc, HDC bufferDC);
 
 #endif

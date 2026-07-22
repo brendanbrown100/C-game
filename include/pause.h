@@ -48,6 +48,8 @@ typedef struct PauseMenu {
     PauseOption options[TOTAL_PAUSE_OPTIONS];
     HBITMAP pausedTitle;
 
+    int player;
+
     int upWasDown;
     int downWasDown;
     int selectWasDown;

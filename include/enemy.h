@@ -66,8 +66,8 @@
 #define ENEMY_HURT_FRAME_DELAY 10
 #define ENEMY_DEATH_FRAME_DELAY 10
 
-#define ENEMY_START_ATTACK_FRAME 3
-#define ENEMY_END_ATTACK_FRAME 6
+#define ENEMY_START_ATTACK_FRAME 2
+#define ENEMY_END_ATTACK_FRAME 4
 
 #define ARCHER_ATTACK_DISTANCE 250
 #define ARROW_FRAME_WIDTH 8
@@ -158,6 +158,7 @@ typedef struct Enemy {
     int moving;
     int direction;
     int attacking;
+    int playerAttackingIdx;
     int knockbackApplied;
     int attackHit;  
     int knockbackActive;
@@ -184,7 +185,7 @@ typedef struct Arrow {
 void Enemy_Init(Level *level);
 void Enemy_Update(Game *game);
 void Enemy_Render(Game *game, HDC hdc, HDC bufferDC);
-void Enemy_Start_Knockback(Game *game, Enemy *enemy);
+void Enemy_Start_Knockback(Enemy *enemy, int x, int y);
 void Enemy_Apply_Knockback(Game *game, Enemy *enemy);
 
 #endif

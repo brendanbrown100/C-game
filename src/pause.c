@@ -34,6 +34,7 @@ void Pause_Init(PauseMenu *pauseMenu) {
     pauseMenu->options[HOME] = homeOption;
     pauseMenu->options[SETTINGS_PAUSE_OPTION] = settings;
 
+    pauseMenu->player = 0;
     pauseMenu->upWasDown = 0;
     pauseMenu->downWasDown = 0;
     pauseMenu->selectWasDown = 1;
@@ -42,9 +43,9 @@ void Pause_Init(PauseMenu *pauseMenu) {
 void Pause_Update(GameHandler *handler) {
     PauseMenu *pauseMenu = &handler->pauseMenu;
 
-    int upIsDown = (GetAsyncKeyState(handler->game.upKeyCode) & 0x8000) != 0;
-    int downIsDown = (GetAsyncKeyState(handler->game.downKeyCode) & 0x8000) != 0;
-    int selectIsDown = (GetAsyncKeyState(handler->game.selectKeyCode) & 0x8000) != 0;
+    int upIsDown = (GetAsyncKeyState(handler->game.playerKeyCodeData[pauseMenu->player].upKeyCode) & 0x8000) != 0;
+    int downIsDown = (GetAsyncKeyState(handler->game.playerKeyCodeData[pauseMenu->player].downKeyCode) & 0x8000) != 0;
+    int selectIsDown = (GetAsyncKeyState(handler->game.playerKeyCodeData[pauseMenu->player].selectKeyCode) & 0x8000) != 0;
 
     int upPressed = upIsDown && !pauseMenu->upWasDown;
     int downPressed = downIsDown && !pauseMenu->downWasDown;
@@ -79,6 +80,7 @@ void Pause_Update(GameHandler *handler) {
                 break;
             case SETTINGS_PAUSE_OPTION:
                 handler->settingsMenu.playing = 1;
+                handler->settingsMenu.player = pauseMenu->player;
                 handler->currState = SETTINGS_STATE;
                 break;
             case PAUSE_OPTION_COUNT:
@@ -159,7 +161,7 @@ void Pause_Render(PauseMenu *pauseMenu, HWND hwnd) {
         SRCCOPY
     );
     DeleteDC(pauseDC);
-    
+
     SelectObject(bufferDC, oldBuffer);
     DeleteObject(bufferBitmap);
     DeleteDC(bufferDC);

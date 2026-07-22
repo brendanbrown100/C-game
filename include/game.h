@@ -44,7 +44,7 @@
 #define LEVEL_WIDTH 206
 #define LEVEL_HEIGHT 100
 
-#define MAX_LEVELS 15
+#define MAX_PLAYERS 2
 #define MAX_SPAWNS 10
 #define MAX_COINS 100
 #define MAX_CAROUSELS 50
@@ -106,6 +106,8 @@
 #define BARREL_VERT_HITBOXOFFSET_Y 2
 #define BARREL_HORIZ_HITBOXOFFSET_X 2
 #define BARREL_HORIZ_HITBOXOFFSET_Y 8
+#define BARREL_BREAK_HITBOX_INCREASE_X 10
+#define BARREL_BREAK_HITBOX_INCREASE_Y 10
 
 #define BARREL_FRAME_COUNT 5
 #define BARREL_FRAME_DELAY 5
@@ -145,8 +147,8 @@
 
 #define COIN_HITBOX_OFFSET_X 1
 #define COIN_HITBOX_OFFSET_Y 0
-#define COIN_HITBOX_WIDTH 14
-#define COIN_HITBOX_HEIGHT 16
+#define COIN_HITBOX_WIDTH 20
+#define COIN_HITBOX_HEIGHT 20
 
 #define COIN_FRAME_WIDTH 16
 #define COIN_FRAME_HEIGHT 16
@@ -157,6 +159,8 @@
 
 #define PLAYER_HIT_SHAKE_DURATION 5
 #define PLAYER_HIT_SHAKE_STRENGTH 3
+
+#define CAMERA_DAMPING 0.5
 
 
 #define LEVEL_1_PATH "Assets/Levels/level1.txt"
@@ -198,15 +202,19 @@ typedef enum TileType {
     TILE_BOMB,
 } TileType;
 
+typedef struct PlayerData {
+    int health;
+} PlayerData;
 
 typedef struct GameData {
-    int health;
+    PlayerData playerData[MAX_PLAYERS];
+    int numPlayers;
+    float damping;
     int score;
-
     int level;
 } GameData;
 
-typedef struct KeyCodeData {
+typedef struct PlayerKeyCodeData {
     int upKeyCode;
     int downKeyCode;
     int leftKeyCode;
@@ -217,6 +225,10 @@ typedef struct KeyCodeData {
     int interactKeyCode;
     int selectKeyCode;
     int pauseKeyCode;
+} PlayerKeyCodeData;
+
+typedef struct KeyCodeData {
+    PlayerKeyCodeData playerKeyCodeData[MAX_PLAYERS];
 } KeyCodeData;
 
 typedef struct Level {
@@ -244,6 +256,8 @@ typedef struct Camera {
     int y;
     int width;
     int height;
+
+    float damping;
 
     int shakeTimer;
     int shakeDuration;
@@ -281,6 +295,7 @@ typedef struct Jet {
     int x;
     int y;
     int speed;
+    int player;
 
     int remove;
 } Jet;
@@ -308,6 +323,7 @@ typedef struct Barrel {
 typedef struct Game {
     Level level;
     Player player;
+    Player players[MAX_PLAYERS];
     Camera camera;
     Carousel carousels[MAX_CAROUSELS];
     Cannon cannons[MAX_CANNONS];
@@ -321,7 +337,7 @@ typedef struct Game {
     Animation gameWinAnim;
     Animation coinAnim;
 
-    HBITMAP scoreImg;
+    HBITMAP numbersImg;
 
     HBITMAP wallTile;
     HBITMAP wallUpTile;
@@ -352,7 +368,10 @@ typedef struct Game {
     HBITMAP barrelVertAnim; 
 
     float time;
+
+    int score;
     
+    int numPlayers;
     int levelCount;
     int currentLevel;
     
@@ -367,6 +386,9 @@ typedef struct Game {
     int gameWin;
 
     int backToMenu;
+
+
+    PlayerKeyCodeData playerKeyCodeData[MAX_PLAYERS];
 
     int upKeyCode;
     int downKeyCode;
@@ -398,7 +420,7 @@ SpawnType Random_Spawn();
 int Check_Distance_Range(int x1, int y1, int width1, int height1, int x2, int y2, int width2, int height2, int range);
 int Spawn_Init(Game *game, int x, int y, SpawnType type);
 void Spawn_Render(Game *game, Spawn spawns[], int spawnCount, HDC hdc, HDC bufferDC);
-void Apply_Spawn_Effect(Game *game, Spawn *spawn);
+void Apply_Spawn_Effect(Game *game, Spawn *spawn, int pIndex);
 void Camera_UpdateShake(Camera *camera);
 void Camera_Shake(Camera *camera, int duration, int strength);
 void Coin_Render(Game *game, Coin coins[], int coinCount, HDC hdc, HDC bufferDC);
@@ -411,10 +433,11 @@ int Save_Game_Data(Game *game);
 int Clear_Game_Data();
 int Game_Start_New(Game *game);
 int Game_Has_Valid_Save(Game *game);
-void Spawn_Jet(Game *game);
+void Spawn_Jet(Game *game, int pIndex);
 int Check_Fall(Game *game, int newX, int newY, int hitboxWidth, int hitboxHeight, int hitboxOffsetX, int hitboxOffsetY);
 int Game_Restart_Current_Level(Game *game);
 void Spawn_Barrel(Game *game, int x, int y);
 void Number_Render(Game *game, int startX, int startY, int num, HDC hdc, HDC bufferDC);
+void Check_Game_Over(Game *game);
 
 #endif

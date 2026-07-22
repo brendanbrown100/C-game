@@ -6,24 +6,25 @@
 #include <stdio.h>
 
 static void HealthBar_Update(Player *player);
-static void Player_CheckAttackHit(Game *game);
+static void Player_CheckAttackHit(Game *game, int pIndex);
 static Animation *Player_GetCurrentAnimation(Player *player);
-static void Check_Player_Interact(Game *game);
-static void Check_Player_Spawn(Game *game);
-static void Check_Player_Coin(Game *game);
-static int Check_Enemy_Collision(Game *game, int playerX, int playerY);
+static void Check_Player_Interact(Game *game, int pIndex);
+static void Check_Player_Spawn(Game *game, int pIndex);
+static void Check_Player_Coin(Game *game, int pIndex);
+static int Check_Enemy_Collision(Game *game, int playerX, int playerY, int pIndex);
+static int Check_Player_OffScreen(Game *game, int playerX, int playerY, int pIndex);
 static void Player_Start_Dash(Player *player);
-static void Player_Update_Dash(Game *game);
-static void Throw_Barrel(Game *game);
-static void Drop_Barrel(Game *game);
-static void Update_Carried_Barrel(Game *game);
-static int Cannon_Player_Collision(Game *game, Cannon *cannon, int playerX, int playerY);
+static void Player_Update_Dash(Game *game, int pIndex);
+static void Throw_Barrel(Game *game, int pIndex);
+static void Drop_Barrel(Game *game, int pIndex);
+static void Update_Carried_Barrel(Game *game, int pIndex);
+static int Cannon_Player_Collision(Game *game, Cannon *cannon, int playerX, int playerY, int pIndex);
 
 
-void Player_Init(Game *game, Level *level) {
-    Player *player = &game->player;
+void Player_Init(Game *game, Level *level, int pIndex) {
+    Player *player = &game->players[pIndex];
 
-    player->x = level->startX * TILE_SIZE;
+    player->x = level->startX * TILE_SIZE + pIndex * TILE_SIZE;
     player->y = level->startY * TILE_SIZE;
     player->hitboxWidth = PLAYER_WIDTH;
     player->hitboxHeight = PLAYER_HEIGHT;
@@ -32,7 +33,6 @@ void Player_Init(Game *game, Level *level) {
     player->spriteWidth = FRAME_WIDTH;
     player->spriteHeight = FRAME_HEIGHT;
     if (!player->health) player->health = MAX_HEALTH;
-    if (!player->score) player->score = 0;
     player->sprinting = 0;
     player->moving = 0;
     player->direction = DIR_DOWN;
@@ -40,6 +40,7 @@ void Player_Init(Game *game, Level *level) {
     player->attacking = 0;
     player->beenHit = 0;
     player->dead = 0;
+    player->remove = 0;
     player->attackDirection = DIR_DOWN;
     player->attackMoveSpeed = 0;
     player->attackDamage = level->playerDamage;
@@ -225,8 +226,16 @@ void Player_Init(Game *game, Level *level) {
 }
 
 
-void Player_Update(Game *game) {
-    Player *player = &game->player;
+void Player_Update(GameHandler *handler, int pIndex) {
+    Game *game = &handler->game;
+    Player *player = &game->players[pIndex];
+
+    if ((GetAsyncKeyState(game->playerKeyCodeData[pIndex].pauseKeyCode) & 0x0001)) {
+        handler->currState = PAUSED;
+        handler->pauseMenu.player = pIndex;
+        return;
+    }
+
 
     int moving = 0;
     int sprinting = 0;
@@ -235,7 +244,7 @@ void Player_Update(Game *game) {
     int newY = player->y;
 
     int dashIsDown =
-        (GetAsyncKeyState(game->dashKeyCode) & 0x8000) != 0;
+        (GetAsyncKeyState(game->playerKeyCodeData[pIndex].dashKeyCode) & 0x8000) != 0;
 
     int dashPressed =
         dashIsDown && !player->dashWasDown;
@@ -266,18 +275,17 @@ void Player_Update(Game *game) {
             player->dashDirection
         );
 
-        Player_Update_Dash(game);
+        Player_Update_Dash(game, pIndex);
 
         goto skip_collision;
     }
 
-    Animation *currentAnim = Player_GetCurrentAnimation(&game->player);
-    int finished = Animation_Update(currentAnim, game->player.direction);
+    Animation *currentAnim = Player_GetCurrentAnimation(player);
+    int finished = Animation_Update(currentAnim, player->direction);
 
     if (player->dead) {
         if (finished) {
-            game->gameOverAnim.currentFrame = 0;
-            game->gameOver = 1;
+            player->remove = 1;
         }
         player->state = PLAYER_DEATH;
     } else if (player->beenHit && finished) {
@@ -285,19 +293,19 @@ void Player_Update(Game *game) {
         player->hurt.currentFrame = 0;
     } else if (player->beenHit) {
         if (player->hasBarrel) {
-            Drop_Barrel(game);
+            Drop_Barrel(game, pIndex);
         }
 
         player->state = PLAYER_HURT;
     } else if (!player->attacking && !player->throwingBarrel) {
-        if ((GetAsyncKeyState(game->sprintKeyCode) & 0x8000)) sprinting = 1;
+        if ((GetAsyncKeyState(game->playerKeyCodeData[pIndex].sprintKeyCode) & 0x8000)) sprinting = 1;
 
         int speed = sprinting ? PLAYER_SPRINT_SPEED : PLAYER_SPEED;
 
-        int upDown = (GetAsyncKeyState(game->upKeyCode) & 0x8000) != 0;
-        int leftDown = (GetAsyncKeyState(game->leftKeyCode) & 0x8000) != 0;
-        int downDown = (GetAsyncKeyState(game->downKeyCode) & 0x8000) != 0;
-        int rightDown = (GetAsyncKeyState(game->rightKeyCode) & 0x8000) != 0;
+        int upDown = (GetAsyncKeyState(game->playerKeyCodeData[pIndex].upKeyCode) & 0x8000) != 0;
+        int leftDown = (GetAsyncKeyState(game->playerKeyCodeData[pIndex].leftKeyCode) & 0x8000) != 0;
+        int downDown = (GetAsyncKeyState(game->playerKeyCodeData[pIndex].downKeyCode) & 0x8000) != 0;
+        int rightDown = (GetAsyncKeyState(game->playerKeyCodeData[pIndex].rightKeyCode) & 0x8000) != 0;
 
         /*
         * If a key became pressed this frame, remember it as the newest direction.
@@ -379,18 +387,20 @@ void Player_Update(Game *game) {
 
         if (!moving) goto skipCollisionCheck;
         if (!Collision_Check(game, newX, player->y, player->hitboxWidth, player->hitboxHeight, player->hitboxOffsetX, player->hitboxOffsetY) && 
-            !Check_Enemy_Collision(game, newX, player->y)) {
+            !Check_Enemy_Collision(game, newX, player->y, pIndex) &&
+            !Check_Player_OffScreen(game, newX, player->y, pIndex)) {
             player->x = newX;
         }
 
         if (!Collision_Check(game, player->x, newY, player->hitboxWidth, player->hitboxHeight, player->hitboxOffsetX, player->hitboxOffsetY) &&
-            !Check_Enemy_Collision(game, player->x, newY)) {
+            !Check_Enemy_Collision(game, player->x, newY, pIndex) &&
+            !Check_Player_OffScreen(game, player->x, newY, pIndex)) {
             player->y = newY;
         }
 
         skipCollisionCheck:
 
-        if (GetAsyncKeyState(game->attackKeyCode) & 0x8000) {
+        if (GetAsyncKeyState(game->playerKeyCodeData[pIndex].attackKeyCode) & 0x8000) {
             if (!player->hasBarrel) {
                 player->attacking = 1;
             } else {
@@ -421,16 +431,16 @@ void Player_Update(Game *game) {
             else player->state = (player->hasBarrel) ? PLAYER_BARREL_WALK : PLAYER_WALK;
         }
 
-        if (GetAsyncKeyState(game->interactKeyCode) & 0x0001) {
-            Check_Player_Interact(game);
+        if (GetAsyncKeyState(game->playerKeyCodeData[pIndex].interactKeyCode) & 0x0001) {
+            Check_Player_Interact(game, pIndex);
         }
     } else if (player->attacking || player->throwingBarrel) {
         if (player->attacking) {
-            if (currentAnim->currentFrame >= PLAYER_START_ATTACK_FRAME && currentAnim->currentFrame <= PLAYER_END_ATTACK_FRAME) Player_CheckAttackHit(game);
+            if (currentAnim->currentFrame >= PLAYER_START_ATTACK_FRAME && currentAnim->currentFrame <= PLAYER_END_ATTACK_FRAME) Player_CheckAttackHit(game, pIndex);
         } else if (player->throwingBarrel) {
             if (currentAnim->currentFrame == BARREL_THROW_RELEASE_FRAME && !player->barrelThrown) {
                 player->barrelThrown = 1;
-                Throw_Barrel(game);
+                Throw_Barrel(game, pIndex);
             }
         }
         
@@ -443,12 +453,14 @@ void Player_Update(Game *game) {
         else if (player->attackDirection == DIR_DOWN) newY += player->attackMoveSpeed;
 
         if (!Collision_Check(game, newX, player->y, player->hitboxWidth, player->hitboxHeight, player->hitboxOffsetX, player->hitboxOffsetY) &&
-            !Check_Enemy_Collision(game, newX, player->y)) {
+            !Check_Enemy_Collision(game, newX, player->y, pIndex) &&
+            !Check_Player_OffScreen(game, newX, player->y, pIndex)) {
             player->x = newX;
         }
 
         if (!Collision_Check(game, player->x, newY, player->hitboxWidth, player->hitboxHeight, player->hitboxOffsetX, player->hitboxOffsetY) &&
-            !Check_Enemy_Collision(game, player->x, newY)) {
+            !Check_Enemy_Collision(game, player->x, newY, pIndex) &&
+            !Check_Player_OffScreen(game, player->x, newY, pIndex)) {
             player->y = newY;
         }
     }
@@ -457,18 +469,16 @@ void Player_Update(Game *game) {
     if (fallCheck == 1) {
         player->health = 0;
         player->dead = 1;
+        Check_Game_Over(game);
     } else if (fallCheck == 2) {
-        Spawn_Jet(game);
+        Spawn_Jet(game, pIndex);
     }
     skip_collision:
-
     
-    HealthBar_Update(&game->player);
-    Check_Player_Spawn(game);
-    Check_Player_Coin(game);
-    Update_Carried_Barrel(game);
-
-
+    HealthBar_Update(player);
+    Check_Player_Spawn(game, pIndex);
+    Check_Player_Coin(game, pIndex);
+    Update_Carried_Barrel(game, pIndex);
     
 
     if (player->attacking && finished) {
@@ -483,8 +493,9 @@ void Player_Update(Game *game) {
 }
 
 
-void Player_Render(Player *player, Game *game, HDC hdc, HDC bufferDC) {
-    Animation *healthBar = &game->player.healthBar;
+void Player_Render(Game *game, int pIndex, HDC hdc, HDC bufferDC) {
+    Player *player = &game->players[pIndex];
+    Animation *healthBar = &player->healthBar;
 
     int healthFrame = (MAX_HEALTH - player->health) * player->healthBar.frameCount[0] / MAX_HEALTH;
 
@@ -498,10 +509,13 @@ void Player_Render(Player *player, Game *game, HDC hdc, HDC bufferDC) {
     HDC healthDC = CreateCompatibleDC(hdc);
     SelectObject(healthDC, healthBar->image);
 
+    int healthX = 20;
+    int healthY = 20 + pIndex * 30;
+
     TransparentBlt(
         bufferDC,
-        4,
-        20,
+        healthX,
+        healthY,
         healthBar->frameWidth,
         healthBar->frameHeight,
         healthDC,
@@ -513,7 +527,9 @@ void Player_Render(Player *player, Game *game, HDC hdc, HDC bufferDC) {
     );
     DeleteDC(healthDC);
 
-    if (game->gameOver) return;
+    Number_Render(game, 10, 36 + pIndex * 30, pIndex + 1, hdc, bufferDC);
+
+    if (player->remove) return;
     Animation *currentAnim = Player_GetCurrentAnimation(player);
 
     int playerScreenX = player->x - game->camera.x;
@@ -549,8 +565,8 @@ void Player_Render(Player *player, Game *game, HDC hdc, HDC bufferDC) {
     DeleteDC(spriteDC);
 }
 
-static void Throw_Barrel(Game *game) {
-    Player *player = &game->player;
+static void Throw_Barrel(Game *game, int pIndex) {
+    Player *player = &game->players[pIndex];
 
     if (!player->hasBarrel ||
         player->carriedBarrelIndex < 0 ||
@@ -608,8 +624,8 @@ static void Player_Start_Dash(Player *player) {
     player->dash.frameTimer = 0;
 }
 
-static void Player_Update_Dash(Game *game) {
-    Player *player = &game->player;
+static void Player_Update_Dash(Game *game, int pIndex) {
+    Player *player = &game->players[pIndex];
 
     for (int step = 0; step < PLAYER_DASH_SPEED; step++) {
         int newX = player->x;
@@ -661,10 +677,8 @@ static void Player_Update_Dash(Game *game) {
          * We are checking enemy collision here, but we are not using
          * it to stop the dash.
          */
-        if (!Check_Enemy_Collision(
-                game,
-                player->x,
-                player->y)) {
+        if (!Check_Enemy_Collision(game, player->x, player->y, pIndex) && 
+            !Check_Player_OffScreen(game, player->x, player->y, pIndex)) {
 
             player->dashSafeX = player->x;
             player->dashSafeY = player->y;
@@ -679,10 +693,8 @@ static void Player_Update_Dash(Game *game) {
         /*
          * Do not allow the dash to finish inside an enemy.
          */
-        if (Check_Enemy_Collision(
-                game,
-                player->x,
-                player->y)) {
+        if (Check_Enemy_Collision(game, player->x, player->y, pIndex) ||
+            Check_Player_OffScreen(game, player->x, player->y, pIndex)) {
 
             player->x = player->dashSafeX;
             player->y = player->dashSafeY;
@@ -697,8 +709,8 @@ static void Player_Update_Dash(Game *game) {
 }
 
 
-static void Check_Player_Spawn(Game *game) {
-    Player *player = &game->player;
+static void Check_Player_Spawn(Game *game, int pIndex) {
+    Player *player = &game->players[pIndex];
     Level *level = &game->level;
     for (int i = 0; i < level->spawnCount; i++) {
         Spawn *spawn = &level->spawns[i];
@@ -706,14 +718,14 @@ static void Check_Player_Spawn(Game *game) {
         if (Check_Distance_Range(player->x, player->y, player->spriteWidth, player->spriteHeight,
                                   spawn->x, spawn->y, TILE_SIZE, TILE_SIZE,
                                   PLAYER_INTERACT_RANGE)) {
-            Apply_Spawn_Effect(game, spawn);
+            Apply_Spawn_Effect(game, spawn, pIndex);
             spawn->remove = 1;
         }
     }
 }
 
-static void Check_Player_Coin(Game *game) {
-    Player *player = &game->player;
+static void Check_Player_Coin(Game *game, int pIndex) {
+    Player *player = &game->players[pIndex];
     int playerX = player->x + player->hitboxOffsetX;
     int playerY = player->y + player->hitboxOffsetY;
     for (int i = 0; i < game->coinCount; i++) {
@@ -725,14 +737,14 @@ static void Check_Player_Coin(Game *game) {
 
         if (RectsOverlap(playerX, playerY, player->hitboxWidth, player->hitboxHeight,
                          coinX, coinY, COIN_HITBOX_WIDTH, COIN_HITBOX_HEIGHT)) {
-            player->score += coin->value;
+            game->score += coin->value;
             coin->remove = 1;
         }
     }
 }
 
-static void Check_Player_Interact(Game *game) {
-    Player *player = &game->player; 
+static void Check_Player_Interact(Game *game, int pIndex) {
+    Player *player = &game->players[pIndex]; 
     Level *level = &game->level;
 
     if (level->tiles[level->goalIndex] == TILE_GOAL_OPEN) {
@@ -784,8 +796,8 @@ static void Check_Player_Interact(Game *game) {
     }
 }
 
-static void Update_Carried_Barrel(Game *game) {
-    Player *player = &game->player;
+static void Update_Carried_Barrel(Game *game, int pIndex) {
+    Player *player = &game->players[pIndex];
 
     if (!player->hasBarrel ||
         player->carriedBarrelIndex < 0 ||
@@ -809,8 +821,8 @@ static void Update_Carried_Barrel(Game *game) {
     barrel->thrown = 0;
 }
 
-static void Drop_Barrel(Game *game) {
-    Player *player = &game->player;
+static void Drop_Barrel(Game *game, int pIndex) {
+    Player *player = &game->players[pIndex];
 
     if (!player->hasBarrel ||
         player->carriedBarrelIndex < 0 ||
@@ -818,8 +830,7 @@ static void Drop_Barrel(Game *game) {
         return;
     }
 
-    Barrel *barrel =
-        &game->barrels[player->carriedBarrelIndex];
+    Barrel *barrel = &game->barrels[player->carriedBarrelIndex];
 
     barrel->pickedUp = 0;
     barrel->thrown = 0;
@@ -837,8 +848,8 @@ static void Drop_Barrel(Game *game) {
 
 
 
-static void Player_CheckAttackHit(Game *game) {
-    Player *player = &game->player;
+static void Player_CheckAttackHit(Game *game, int pIndex) {
+    Player *player = &game->players[pIndex];
     Level *level = &game->level;
 
     if (!player->attacking)
@@ -870,7 +881,7 @@ static void Player_CheckAttackHit(Game *game) {
             enemy->state = ENEMY_HURT;
             enemy->attacking = 0;
             enemy->attackHit = 0;
-            Enemy_Start_Knockback(game, enemy);
+            Enemy_Start_Knockback(enemy, player->x, player->y);
             int health = enemy->health - player->attackDamage;
             if (health <= 0) enemy->dead = 1;
             enemy->health = (health > 0) ? health : 0;
@@ -878,11 +889,27 @@ static void Player_CheckAttackHit(Game *game) {
     }
 }
 
-static int Check_Enemy_Collision(Game *game, int playerX, int playerY) {
+static int Check_Player_OffScreen(Game *game, int playerX, int playerY, int pIndex) {
+    int left = playerX + game->players[pIndex].hitboxOffsetX;
+    int top = playerY + game->players[pIndex].hitboxOffsetY;
+    int right = left + game->players[pIndex].hitboxWidth;
+    int bottom = top + game->players[pIndex].hitboxHeight;
+
+    if (left < game->camera.x || 
+        right > game->camera.x + game->camera.width || 
+        top < game->camera.y ||
+        bottom > game->camera.y + game->camera.height) {
+            return 1;
+    }
+    return 0;
+
+}
+
+static int Check_Enemy_Collision(Game *game, int playerX, int playerY, int pIndex) {
     Level *level = &game->level;
 
-    int bodyX = playerX + game->player.hitboxOffsetX;
-    int bodyY = playerY + game->player.hitboxOffsetY;
+    int bodyX = playerX + game->players[pIndex].hitboxOffsetX;
+    int bodyY = playerY + game->players[pIndex].hitboxOffsetY;
 
     for (int i = 0; i < level->enemyCount; i++) {
         Enemy *enemy = &level->enemies[i];
@@ -892,7 +919,7 @@ static int Check_Enemy_Collision(Game *game, int playerX, int playerY) {
         int enemyY = enemy->y + enemy->hitboxOffsetY;
 
         if (RectsOverlap(bodyX, bodyY,
-                        game->player.hitboxWidth, game->player.hitboxHeight,
+                        game->players[pIndex].hitboxWidth, game->players[pIndex].hitboxHeight,
                         enemyX, enemyY, enemy->hitboxWidth, enemy->hitboxHeight)) {
                             return 1;
         }
@@ -901,14 +928,14 @@ static int Check_Enemy_Collision(Game *game, int playerX, int playerY) {
     for (int i = 0; i < game->cannonCount; i++) {
         Cannon *cannon = &game->cannons[i];
         if (cannon->remove) continue;
-        if (Cannon_Player_Collision(game, cannon, playerX, playerY)) return 1;
+        if (Cannon_Player_Collision(game, cannon, playerX, playerY, pIndex)) return 1;
     }
 
     return 0;
 }
 
-static int Cannon_Player_Collision(Game *game, Cannon *cannon, int playerX, int playerY) {
-    Player *player = &game->player;
+static int Cannon_Player_Collision(Game *game, Cannon *cannon, int playerX, int playerY, int pIndex) {
+    Player *player = &game->players[pIndex];
 
     int bodyX = playerX + player->hitboxOffsetX;
     int bodyY = playerY + player->hitboxOffsetY;

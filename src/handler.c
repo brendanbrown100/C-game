@@ -17,12 +17,7 @@ int Handler_Init(GameHandler *handler) {
 }
 
 void Handler_Update(GameHandler *handler) {
-    if (handler->currState == PLAYING &&
-        (GetAsyncKeyState(handler->game.pauseKeyCode) & 0x0001)) {
-
-        handler->currState = PAUSED;
-        return;
-    }
+    
     switch (handler->currState) {
         case MENU: 
             Home_Update(handler);

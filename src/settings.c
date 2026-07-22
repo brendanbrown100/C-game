@@ -6,7 +6,7 @@
 #include <windows.h>
 
 static int Save_Key_Codes(Game *game);
-static int Get_KeyCode(Game *game, int type);
+static int Get_KeyCode(Game *game, int type, int pIndex);
 
 void Settings_Init(Settings *settings) {
     for (int i = 0; i < TOTAL_SETTINGS_OPTIONS; i++) {
@@ -30,14 +30,17 @@ void Settings_Init(Settings *settings) {
     Load_Image(&settings->options[INTERACT_KEY_OPTION].optionImg, INTERACT_KEY_IMG_PATH); 
     Load_Image(&settings->options[SELECT_KEY_OPTION].optionImg, SELECT_KEY_IMG_PATH); 
     Load_Image(&settings->options[PAUSE_KEY_OPTION].optionImg, PAUSE_KEY_IMG_PATH);
+    Load_Image(&settings->options[NUM_PLAYERS_OPTION].optionImg, NUM_PLAYERS_IMG_PATH);
+    Load_Image(&settings->options[DAMPING_OPTION].optionImg, DAMPING_IMG_PATH);
     Load_Image(&settings->options[BACK_OPTION].optionImg, BACK_IMG_PATH); 
     Load_Image(&settings->settingsTitle, SETTINGS_TITLE_PATH); 
 
+    settings->playing = 0;
+    settings->player = 0;
     settings->upWasDown = 0;
     settings->downWasDown = 0;
     settings->selectWasDown = 1;
     settings->currSelected = 0;
-    settings->playing = 0;
 }
 
 
@@ -77,7 +80,7 @@ void Settings_Update(GameHandler *handler) {
 
             SHORT keyState = GetAsyncKeyState(virtualCode);
 
-            if (!(keyState & 0x0001)) {
+            if (!(keyState & 0x8000)) {
                 continue;
             }
 
@@ -89,43 +92,49 @@ void Settings_Update(GameHandler *handler) {
 
             switch (option->type) {
                 case UP_KEY_OPTION:
-                    game->upKeyCode = virtualCode;
+                    game->playerKeyCodeData[settings->player].upKeyCode = virtualCode;
                     break;
 
                 case DOWN_KEY_OPTION:
-                    game->downKeyCode = virtualCode;
+                    game->playerKeyCodeData[settings->player].downKeyCode = virtualCode;
                     break;
 
                 case LEFT_KEY_OPTION:
-                    game->leftKeyCode = virtualCode;
+                    game->playerKeyCodeData[settings->player].leftKeyCode = virtualCode;
                     break;
 
                 case RIGHT_KEY_OPTION:
-                    game->rightKeyCode = virtualCode;
+                    game->playerKeyCodeData[settings->player].rightKeyCode = virtualCode;
                     break;
 
                 case SPRINT_KEY_OPTION:
-                    game->sprintKeyCode = virtualCode;
+                    game->playerKeyCodeData[settings->player].sprintKeyCode = virtualCode;
                     break;
 
                 case DASH_KEY_OPTION:
-                    game->dashKeyCode = virtualCode;
+                    game->playerKeyCodeData[settings->player].dashKeyCode = virtualCode;
                     break;
 
                 case ATTACK_KEY_OPTION:
-                    game->attackKeyCode = virtualCode;
+                    game->playerKeyCodeData[settings->player].attackKeyCode = virtualCode;
                     break;
 
                 case INTERACT_KEY_OPTION:
-                    game->interactKeyCode = virtualCode;
+                    game->playerKeyCodeData[settings->player].interactKeyCode = virtualCode;
                     break;
 
                 case SELECT_KEY_OPTION:
-                    game->selectKeyCode = virtualCode;
+                    game->playerKeyCodeData[settings->player].selectKeyCode = virtualCode;
                     break;
 
                 case PAUSE_KEY_OPTION:
-                    game->pauseKeyCode = virtualCode;
+                    game->playerKeyCodeData[settings->player].pauseKeyCode = virtualCode;
+                    break;
+                
+                case NUM_PLAYERS_OPTION:
+                    break;
+
+                case DAMPING_OPTION:
                     break;
 
                 case BACK_OPTION:
@@ -149,15 +158,15 @@ void Settings_Update(GameHandler *handler) {
              * activating the menu.
              */
             settings->upWasDown =
-                (GetAsyncKeyState(game->upKeyCode) &
+                (GetAsyncKeyState(game->playerKeyCodeData[settings->player].upKeyCode) &
                  0x8000) != 0;
 
             settings->downWasDown =
-                (GetAsyncKeyState(game->downKeyCode) &
+                (GetAsyncKeyState(game->playerKeyCodeData[settings->player].downKeyCode) &
                  0x8000) != 0;
 
             settings->selectWasDown =
-                (GetAsyncKeyState(game->selectKeyCode) &
+                (GetAsyncKeyState(game->playerKeyCodeData[settings->player].selectKeyCode) &
                  0x8000) != 0;
 
             return;
@@ -173,15 +182,15 @@ void Settings_Update(GameHandler *handler) {
      * Normal settings-menu controls.
      */
     int upIsDown =
-        (GetAsyncKeyState(game->upKeyCode) &
+        (GetAsyncKeyState(game->playerKeyCodeData[settings->player].upKeyCode) &
          0x8000) != 0;
 
     int downIsDown =
-        (GetAsyncKeyState(game->downKeyCode) &
+        (GetAsyncKeyState(game->playerKeyCodeData[settings->player].downKeyCode) &
          0x8000) != 0;
 
     int selectIsDown =
-        (GetAsyncKeyState(game->selectKeyCode) &
+        (GetAsyncKeyState(game->playerKeyCodeData[settings->player].selectKeyCode) &
          0x8000) != 0;
 
     int upPressed =
@@ -194,61 +203,85 @@ void Settings_Update(GameHandler *handler) {
         selectIsDown && !settings->selectWasDown;
 
     if (upPressed) {
-        settings->options[
-            settings->currSelected
-        ].selected = 0;
-
+        settings->options[settings->currSelected].selected = 0;
+        
         settings->currSelected--;
 
         if (settings->currSelected < 0) {
-            settings->currSelected =
-                TOTAL_SETTINGS_OPTIONS - 1;
+            settings->currSelected = TOTAL_SETTINGS_OPTIONS - 1;
         }
 
-        settings->options[
-            settings->currSelected
-        ].selected = 1;
+        settings->options[settings->currSelected].selected = 1;
     }
     else if (downPressed) {
-        settings->options[
-            settings->currSelected
-        ].selected = 0;
+        settings->options[settings->currSelected].selected = 0;
 
         settings->currSelected =
             (settings->currSelected + 1) %
             TOTAL_SETTINGS_OPTIONS;
 
-        settings->options[
-            settings->currSelected
-        ].selected = 1;
+        settings->options[settings->currSelected].selected = 1;
     }
 
     if (selectPressed) {
         SettingsOption *option =
-            &settings->options[
-                settings->currSelected
-            ];
+            &settings->options[settings->currSelected];
 
-        if (option->type == BACK_OPTION) {
-            if (settings->playing) {
-                handler->currState = PAUSED;
-            }
-            else {
-                handler->currState = MENU;
-            }
+        
+        switch (option->type) {
+            case BACK_OPTION:
+                if (settings->playing) {
+                    handler->currState = PAUSED;
+                }
+                else {
+                    handler->currState = MENU;
+                }
 
-            settings->playing = 0;
-            settings->selectWasDown = 1;
-            return;
+                settings->playing = 0;
+                settings->selectWasDown = 1;
+                return;
+            case NUM_PLAYERS_OPTION:
+                if (settings->player != 0) goto skip_num_player;
+                int numPlayers = handler->game.numPlayers;
+                numPlayers++;
+                if (numPlayers > MAX_PLAYERS) numPlayers = 1;
+                handler->game.numPlayers = numPlayers;
+                skip_num_player:
+                settings->upWasDown = upIsDown;
+                settings->downWasDown = downIsDown;
+                settings->selectWasDown = selectIsDown;
+                return;
+            case DAMPING_OPTION:
+                if (settings->player != 0) goto skip_damping;
+                int damping = (int)(handler->game.camera.damping * 10.0f);
+
+                damping++;
+
+                if (damping > 10) {
+                    damping = 1;
+                }
+
+                handler->game.camera.damping = damping / 10.0f;
+
+                printf(
+                    "damping: %.1f\n",
+                    handler->game.camera.damping
+                );
+
+                skip_damping:
+
+                settings->upWasDown = upIsDown;
+                settings->downWasDown = downIsDown;
+                settings->selectWasDown = selectIsDown;
+                return;
+            
+            default: 
+                break;
+                
         }
-
-        /*
-         * Begin nonblocking remapping.
-         *
-         * At approximately 60 FPS, 10 frames is about 1/6 second.
-         */
+        
         option->changingKeyState = 1;
-        option->remapDelay = 10;
+        option->remapDelay = 30;
 
         settings->upWasDown = upIsDown;
         settings->downWasDown = downIsDown;
@@ -324,7 +357,7 @@ void Settings_Render(GameHandler *handler, HWND hwnd) {
         
         SelectObject(settingsDC, oldimage);
 
-        int value = Get_KeyCode(&handler->game, option->type);
+        int value = Get_KeyCode(&handler->game, option->type, settings->player);
         if (value) Number_Render(&handler->game, KEY_CODE_VAL_X, option->y, value, hdc, bufferDC);
     }
     BitBlt(
@@ -341,7 +374,7 @@ void Settings_Render(GameHandler *handler, HWND hwnd) {
     DeleteDC(settingsDC);
 
     Number_Render(&handler->game, FPS_X, FPS_Y, (int)handler->fps, hdc, bufferDC);
-
+    Number_Render(&handler->game, 750, 50, (int) handler->settingsMenu.player + 1, hdc, bufferDC);
     SelectObject(bufferDC, oldBuffer);
     DeleteObject(bufferBitmap);
     DeleteDC(bufferDC);
@@ -349,20 +382,22 @@ void Settings_Render(GameHandler *handler, HWND hwnd) {
     ReleaseDC(hwnd, hdc);
 }
 
-static int Get_KeyCode(Game *game, int type) {
+static int Get_KeyCode(Game *game, int type, int pIndex) {
     switch (type) {
-        case (UP_KEY_OPTION): return game->upKeyCode;
-        case (DOWN_KEY_OPTION): return game->downKeyCode;
-        case (LEFT_KEY_OPTION): return game->leftKeyCode;
-        case (RIGHT_KEY_OPTION): return game->rightKeyCode;
-        case (SPRINT_KEY_OPTION): return game->sprintKeyCode;
-        case (DASH_KEY_OPTION): return game->dashKeyCode;
-        case (ATTACK_KEY_OPTION): return game->attackKeyCode;
-        case (INTERACT_KEY_OPTION): return game->interactKeyCode;
-        case (SELECT_KEY_OPTION): return game->selectKeyCode;
-        case (PAUSE_KEY_OPTION): return game->pauseKeyCode;
-        case (BACK_OPTION): return 0;
-        default: return 0;
+        case (UP_KEY_OPTION):       return game->playerKeyCodeData[pIndex].upKeyCode;
+        case (DOWN_KEY_OPTION):     return game->playerKeyCodeData[pIndex].downKeyCode;
+        case (LEFT_KEY_OPTION):     return game->playerKeyCodeData[pIndex].leftKeyCode;
+        case (RIGHT_KEY_OPTION):    return game->playerKeyCodeData[pIndex].rightKeyCode;
+        case (SPRINT_KEY_OPTION):   return game->playerKeyCodeData[pIndex].sprintKeyCode;
+        case (DASH_KEY_OPTION):     return game->playerKeyCodeData[pIndex].dashKeyCode;
+        case (ATTACK_KEY_OPTION):   return game->playerKeyCodeData[pIndex].attackKeyCode;
+        case (INTERACT_KEY_OPTION): return game->playerKeyCodeData[pIndex].interactKeyCode;
+        case (SELECT_KEY_OPTION):   return game->playerKeyCodeData[pIndex].selectKeyCode;
+        case (PAUSE_KEY_OPTION):    return game->playerKeyCodeData[pIndex].pauseKeyCode;
+        case (NUM_PLAYERS_OPTION):  return game->numPlayers;
+        case (DAMPING_OPTION):      return (int) (game->camera.damping * 10);
+        case (BACK_OPTION):         return 0;
+        default:                    return 0;
     }
 }
 
@@ -372,16 +407,20 @@ static int Get_KeyCode(Game *game, int type) {
 static int Save_Key_Codes(Game *game) {
     KeyCodeData data = {0};
 
-    data.upKeyCode = game->upKeyCode;
-    data.leftKeyCode = game->leftKeyCode;
-    data.rightKeyCode = game->rightKeyCode;
-    data.downKeyCode = game->downKeyCode;
-    data.sprintKeyCode = game->sprintKeyCode;
-    data.dashKeyCode = game->dashKeyCode;
-    data.attackKeyCode = game->attackKeyCode;
-    data.interactKeyCode = game->interactKeyCode;
-    data.selectKeyCode = game->selectKeyCode;
-    data.pauseKeyCode = game->pauseKeyCode;
+    for (int i = 0; i < MAX_PLAYERS; i++) {
+        PlayerKeyCodeData *playerKeyCodeData = &data.playerKeyCodeData[i];
+
+        playerKeyCodeData->upKeyCode = game->playerKeyCodeData[i].upKeyCode;
+        playerKeyCodeData->leftKeyCode = game->playerKeyCodeData[i].leftKeyCode;
+        playerKeyCodeData->rightKeyCode = game->playerKeyCodeData[i].rightKeyCode;
+        playerKeyCodeData->downKeyCode = game->playerKeyCodeData[i].downKeyCode;
+        playerKeyCodeData->sprintKeyCode = game->playerKeyCodeData[i].sprintKeyCode;
+        playerKeyCodeData->dashKeyCode = game->playerKeyCodeData[i].dashKeyCode;
+        playerKeyCodeData->attackKeyCode = game->playerKeyCodeData[i].attackKeyCode;
+        playerKeyCodeData->interactKeyCode = game->playerKeyCodeData[i].interactKeyCode;
+        playerKeyCodeData->selectKeyCode = game->playerKeyCodeData[i].selectKeyCode;
+        playerKeyCodeData->pauseKeyCode = game->playerKeyCodeData[i].pauseKeyCode;
+    }
 
     FILE *file = fopen(GAME_KEY_CODES_PATH, "wb");
 

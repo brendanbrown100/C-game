@@ -45,11 +45,17 @@ void Carousel_Update(Game *game) {
             }
         }
 
-        if (Carousel_Player_Collision(game, carousel) && carousel->attackHit == 0) {
-            int health = game->player.health - carousel->damage;
-            game->player.health = health > 0 ? health : 0;
-            if (health > 0) game->player.beenHit = 1;
-            else game->player.dead = 1;
+        int pIndex = Carousel_Player_Collision(game, carousel);
+        if (pIndex >= 0 && carousel->attackHit == 0) {
+            Player *player = &game->players[pIndex];
+
+            int health = player->health - carousel->damage;
+            player->health = health > 0 ? health : 0;
+            if (health > 0) player->beenHit = 1;
+            else {
+                player->dead = 1;
+                Check_Game_Over(game);
+            }
 
             Camera_Shake(&game->camera, PLAYER_HIT_SHAKE_DURATION, PLAYER_HIT_SHAKE_STRENGTH);
             carousel->attackHit = 1;
@@ -156,113 +162,113 @@ static float Distance_Point_To_Segment(float px, float py, float ax, float ay, f
 }
 
 static int Carousel_Player_Collision(Game *game, Carousel *carousel) {
-    Player *player = &game->player;
+    for (int i = 0; i < game->numPlayers; i++) {
+        Player *player = &game->players[i];
+        float centerX =
+            carousel->x +
+            CAROUSEL_FRAME_WIDTH / 2.0f;
 
-    float centerX =
-        carousel->x +
-        CAROUSEL_FRAME_WIDTH / 2.0f;
+        float centerY =
+            carousel->y +
+            CAROUSEL_FRAME_HEIGHT / 2.0f;
 
-    float centerY =
-        carousel->y +
-        CAROUSEL_FRAME_HEIGHT / 2.0f;
+        float playerCenterX =
+            player->x +
+            player->hitboxOffsetX +
+            player->hitboxWidth / 2.0f;
 
-    float playerCenterX =
-        player->x +
-        player->hitboxOffsetX +
-        player->hitboxWidth / 2.0f;
+        float playerCenterY =
+            player->y +
+            player->hitboxOffsetY +
+            player->hitboxHeight / 2.0f;
 
-    float playerCenterY =
-        player->y +
-        player->hitboxOffsetY +
-        player->hitboxHeight / 2.0f;
+        float halfPlayerWidth =
+            player->hitboxWidth / 2.0f;
 
-    float halfPlayerWidth =
-        player->hitboxWidth / 2.0f;
+        float halfPlayerHeight =
+            player->hitboxHeight / 2.0f;
 
-    float halfPlayerHeight =
-        player->hitboxHeight / 2.0f;
+        float playerRadius =
+            halfPlayerWidth < halfPlayerHeight
+            ? halfPlayerWidth
+            : halfPlayerHeight;
 
-    float playerRadius =
-        halfPlayerWidth < halfPlayerHeight
-        ? halfPlayerWidth
-        : halfPlayerHeight;
+        float rotationDegrees =
+            CAROUSEL_START_ANGLE -
+            carousel->anim.currentFrame *
+            CAROUSEL_ROTATION_PER_FRAME;
 
-    float rotationDegrees =
-        CAROUSEL_START_ANGLE -
-        carousel->anim.currentFrame *
-        CAROUSEL_ROTATION_PER_FRAME;
+        float baseAngle =
+            rotationDegrees * PI / 180.0f;
 
-    float baseAngle =
-        rotationDegrees * PI / 180.0f;
+        float armStartDistance = 22.6f;
 
-    float armStartDistance = 22.6f;
-
-    float armEndDistance =
-        armStartDistance +
-        CAROUSEL_ARM_LENGTH;
+        float armEndDistance =
+            armStartDistance +
+            CAROUSEL_ARM_LENGTH;
 
 
-    float centerLeft =
-        centerX - CAROUSEL_CENTER_SIZE / 2.0f;
+        float centerLeft =
+            centerX - CAROUSEL_CENTER_SIZE / 2.0f;
 
-    float centerTop =
-        centerY - CAROUSEL_CENTER_SIZE / 2.0f;
+        float centerTop =
+            centerY - CAROUSEL_CENTER_SIZE / 2.0f;
 
-    if (RectsOverlap(
-            (int)(player->x + player->hitboxOffsetX),
-            (int)(player->y + player->hitboxOffsetY),
-            player->hitboxWidth,
-            player->hitboxHeight,
-            (int)centerLeft,
-            (int)centerTop,
-            CAROUSEL_CENTER_SIZE,
-            CAROUSEL_CENTER_SIZE)) {
-        return 1;
-    }
-
-    
-    for (int arm = 0; arm < 4; arm++) {
-        float angle =
-            baseAngle +
-            arm * (PI / 2.0f);
-
-        float directionX = cosf(angle);
-        float directionY = sinf(angle);
-
-        float startX =
-            centerX +
-            directionX * armStartDistance;
-
-        float startY =
-            centerY +
-            directionY * armStartDistance;
-
-        float endX =
-            centerX +
-            directionX * armEndDistance;
-
-        float endY =
-            centerY +
-            directionY * armEndDistance;
-
-        float distance =
-            Distance_Point_To_Segment(
-                playerCenterX,
-                playerCenterY,
-                startX,
-                startY,
-                endX,
-                endY
-            );
-
-        float collisionRadius =
-            playerRadius +
-            CAROUSEL_ARM_THICKNESS / 2.0f;
-
-        if (distance <= collisionRadius) {
+        if (RectsOverlap(
+                (int)(player->x + player->hitboxOffsetX),
+                (int)(player->y + player->hitboxOffsetY),
+                player->hitboxWidth,
+                player->hitboxHeight,
+                (int)centerLeft,
+                (int)centerTop,
+                CAROUSEL_CENTER_SIZE,
+                CAROUSEL_CENTER_SIZE)) {
             return 1;
         }
-    }
 
-    return 0;
+        
+        for (int arm = 0; arm < 4; arm++) {
+            float angle =
+                baseAngle +
+                arm * (PI / 2.0f);
+
+            float directionX = cosf(angle);
+            float directionY = sinf(angle);
+
+            float startX =
+                centerX +
+                directionX * armStartDistance;
+
+            float startY =
+                centerY +
+                directionY * armStartDistance;
+
+            float endX =
+                centerX +
+                directionX * armEndDistance;
+
+            float endY =
+                centerY +
+                directionY * armEndDistance;
+
+            float distance =
+                Distance_Point_To_Segment(
+                    playerCenterX,
+                    playerCenterY,
+                    startX,
+                    startY,
+                    endX,
+                    endY
+                );
+
+            float collisionRadius =
+                playerRadius +
+                CAROUSEL_ARM_THICKNESS / 2.0f;
+
+            if (distance <= collisionRadius) {
+                return i;
+            }
+        }
+    }
+    return -1;
 }

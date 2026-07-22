@@ -13,6 +13,8 @@
 #define INTERACT_KEY_IMG_PATH "Assets/Sprites/Static/interact-key.bmp"
 #define SELECT_KEY_IMG_PATH   "Assets/Sprites/Static/select-key.bmp"
 #define PAUSE_KEY_IMG_PATH    "Assets/Sprites/Static/pause-key.bmp"
+#define NUM_PLAYERS_IMG_PATH  "Assets/Sprites/Static/#players.bmp"
+#define DAMPING_IMG_PATH      "Assets/Sprites/Static/damping.bmp"
 #define BACK_IMG_PATH         "Assets/Sprites/Static/back.bmp"
 
 #define SETTINGS_TITLE_WIDTH    215
@@ -21,13 +23,13 @@
 #define SETTINGS_TITLE_Y        25
 
 #define SETTINGS_OPTION_START_Y      100
-#define SETTINGS_OPTION_INCREMENT_Y  45
+#define SETTINGS_OPTION_INCREMENT_Y  35
 #define SETTINGS_OPTION_X            100
 #define SETTINGS_OPTION_WIDTH        150
 #define SETTINGS_OPTION_HEIGHT       25
 #define KEY_CODE_VAL_X               275
 
-#define TOTAL_SETTINGS_OPTIONS  11
+#define TOTAL_SETTINGS_OPTIONS  13
 
 
 typedef enum SettingsOptionType {
@@ -41,6 +43,8 @@ typedef enum SettingsOptionType {
     INTERACT_KEY_OPTION,
     SELECT_KEY_OPTION,
     PAUSE_KEY_OPTION,
+    NUM_PLAYERS_OPTION,
+    DAMPING_OPTION,
     BACK_OPTION,
 } SettingsOptionType;
 
@@ -60,7 +64,9 @@ typedef struct Settings {
     SettingsOption options[TOTAL_SETTINGS_OPTIONS];
     HBITMAP settingsTitle;
     HBITMAP numbersImg;
-    
+
+    int player;
+
     int playing;
     int upWasDown;
     int downWasDown;

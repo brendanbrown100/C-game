@@ -10,7 +10,7 @@
 
 static void Game_UpdateCamera(Game *game);
 static int Level_Won(Game *game);
-static void Jet_Update(Game *game);
+static void Jet_Update(Game *Game);
 static void Jet_Render(Game *game, HDC hdc, HDC bufferDC);
 static void Game_Screen_Event(Game *game, Animation *anim, HDC hdc, HDC bufferDC);
 static void Barrel_Update(Game *game);
@@ -46,10 +46,11 @@ int Game_Init(Game *game) {
     game->gameOver = 0;
     game->gameWin = 0;
     game->backToMenu = 0;
+    game->numPlayers = 1;
 
     if (Load_Key_Codes(game)) printf("KeyCodes Loaded Successfully\n");
     
-    Load_Image(&game->scoreImg, NUMBERS_PATH);
+    Load_Image(&game->numbersImg, NUMBERS_PATH);
 
     Load_Image(&game->wallTile, WALL_TILE_PATH);
     Load_Image(&game->wallUpTile, WALL_UP_TILE_PATH);
@@ -129,6 +130,7 @@ int Game_Init(Game *game) {
 
     game->camera.width = WIDTH;
     game->camera.height = HEIGHT;
+    game->camera.damping = CAMERA_DAMPING;
     game->camera.shakeTimer = 0;
     game->camera.shakeDuration = 0;
     game->camera.shakeStrength = 0;
@@ -398,8 +400,9 @@ int Game_InitLevel(Game *game, const char *levelPath) {
     }
 
     fclose(file);
-
-    Player_Init(game, level);
+    for (int i = 0; i < game->numPlayers; i++) {
+        Player_Init(game, level, i);
+    }
     Enemy_Init(level);
     Carousel_Init(game);
     Cannon_Init(game);
@@ -449,9 +452,15 @@ int Save_Game_Data(Game *game) {
 
     GameData data = {0};
 
-    data.health = game->player.health;
-    data.score = game->player.score;
+    for (int i = 0; i < game->numPlayers; i++) {
+        PlayerData *playerData = &data.playerData[i];
+        playerData->health = game->players[i].health;
+    }
+    data.score = game->score;
     data.level = game->currentLevel;
+    data.numPlayers = game->numPlayers;
+    data.damping = game->camera.damping;
+
 
     FILE *file = fopen(GAME_STATE_PATH, "wb");
 
@@ -486,9 +495,12 @@ int Game_Start_New(Game *game) {
     game->gameOver = 0;
     game->gameWin = 0;
     game->backToMenu = 0;
+    game->score = 0;
 
-    game->player.health = MAX_HEALTH;
-    game->player.score = 0;
+    for (int i = 0; i < game->numPlayers; i++) {
+        Player *player = &game->players[i];
+        player->health = MAX_HEALTH;
+    }
 
     if (!Game_InitLevel(game, levelPaths[0])) {
         printf("New game failed to load level 0\n");
@@ -515,16 +527,30 @@ static int Load_Key_Codes(Game *game) {
 
     if (file == NULL) {
         printf("FILE NOT FOUND: No key codes file found\n");
-        game->upKeyCode = 87;
-        game->downKeyCode = 83;
-        game->leftKeyCode = 65;
-        game->rightKeyCode = 68;
-        game->sprintKeyCode = 16;
-        game->dashKeyCode = 17;
-        game->attackKeyCode = 32;
-        game->interactKeyCode = 69;
-        game->selectKeyCode = 13; 
-        game->pauseKeyCode = 80;
+        PlayerKeyCodeData *p1 = &game->playerKeyCodeData[0];
+        PlayerKeyCodeData *p2 = &game->playerKeyCodeData[1];
+
+        p1->upKeyCode = 87; // 'W'
+        p1->downKeyCode = 83; // 'S'
+        p1->leftKeyCode = 65; // 'A'
+        p1->rightKeyCode = 68; // 'D'
+        p1->sprintKeyCode = 16; // SHIFT
+        p1->dashKeyCode = 17; // CNTRL
+        p1->attackKeyCode = 32; // SPACE
+        p1->interactKeyCode = 69; // 'E'
+        p1->selectKeyCode = 13; // ENTER
+        p1->pauseKeyCode = 80; // 'P'
+
+        p2->upKeyCode = 38; // UP key
+        p2->downKeyCode = 40; // DOWN key
+        p2->leftKeyCode = 37; // LEFT key
+        p2->rightKeyCode = 39; // RIGHT key
+        p2->sprintKeyCode = 18; // ALT
+        p2->dashKeyCode = 78; // 'M'
+        p2->attackKeyCode = 77; // 'N'
+        p2->interactKeyCode = 75; // 'K'
+        p2->selectKeyCode = 76; // 'L'
+        p2->pauseKeyCode = 75; // 'K'
         return 0;
     }
 
@@ -541,59 +567,76 @@ static int Load_Key_Codes(Game *game) {
 
     if (itemsRead != 1) {
         printf("FILE EMPTY: No key codes file found\n");
-        game->upKeyCode = 87;
-        game->downKeyCode = 83;
-        game->leftKeyCode = 65;
-        game->rightKeyCode = 68;
-        game->sprintKeyCode = 16;
-        game->dashKeyCode = 17;
-        game->attackKeyCode = 32;
-        game->interactKeyCode = 69;
-        game->selectKeyCode = 13; 
-        game->pauseKeyCode = 80;
+        PlayerKeyCodeData *p1 = &game->playerKeyCodeData[0];
+        PlayerKeyCodeData *p2 = &game->playerKeyCodeData[1];
+
+        p1->upKeyCode = 87; // 'W'
+        p1->downKeyCode = 83; // 'S'
+        p1->leftKeyCode = 65; // 'A'
+        p1->rightKeyCode = 68; // 'D'
+        p1->sprintKeyCode = 16; // SHIFT
+        p1->dashKeyCode = 17; // CNTRL
+        p1->attackKeyCode = 32; // SPACE
+        p1->interactKeyCode = 69; // 'E'
+        p1->selectKeyCode = 13; // ENTER
+        p1->pauseKeyCode = 80; // 'P'
+
+        p2->upKeyCode = 38; // UP key
+        p2->downKeyCode = 40; // DOWN key
+        p2->leftKeyCode = 37; // LEFT key
+        p2->rightKeyCode = 39; // RIGHT key
+        p2->sprintKeyCode = 18; // ALT
+        p2->dashKeyCode = 78; // 'M'
+        p2->attackKeyCode = 77; // 'N'
+        p2->interactKeyCode = 75; // 'K'
+        p2->selectKeyCode = 76; // 'L'
+        p2->pauseKeyCode = 75; // 'K'
+
         return 0;
     }
 
-    if (keyCodes.upKeyCode <= 0 || keyCodes.upKeyCode >= 255) {
-        printf("Invalid Up Key Code: %d\n", keyCodes.upKeyCode);
-        return 0;
-    } else if (keyCodes.downKeyCode <= 0 || keyCodes.downKeyCode >= 255) {
-        printf("Invalid Down Key Code: %d\n", keyCodes.downKeyCode);
-        return 0;
-    } else if (keyCodes.leftKeyCode <= 0 || keyCodes.leftKeyCode >= 255) {
-        printf("Invalid Left Key Code: %d\n", keyCodes.leftKeyCode);
-        return 0;
-    } else if (keyCodes.rightKeyCode <= 0 || keyCodes.rightKeyCode >= 255) {
-        printf("Invalid Right Key Code: %d\n", keyCodes.rightKeyCode);
-        return 0;
-    } else if (keyCodes.sprintKeyCode <= 0 || keyCodes.sprintKeyCode >= 255) {
-        printf("Invalid Sprint Key Code: %d\n", keyCodes.sprintKeyCode);
-        return 0;
-    } else if (keyCodes.dashKeyCode <= 0 || keyCodes.dashKeyCode >= 255) {
-        printf("Invalid Dash Key Code: %d\n", keyCodes.dashKeyCode);
-        return 0;
-    } else if (keyCodes.attackKeyCode <= 0 || keyCodes.attackKeyCode >= 255) {
-        printf("Invalid Attack Key Code: %d\n", keyCodes.attackKeyCode);
-        return 0;
-    } else if (keyCodes.interactKeyCode <= 0 || keyCodes.interactKeyCode >= 255) {
-        printf("Invalid Interact Key Code: %d\n", keyCodes.interactKeyCode);
-        return 0;
-    } else if (keyCodes.selectKeyCode <= 0 || keyCodes.selectKeyCode >= 255) {
-        printf("Invalid Select Key Code: %d\n", keyCodes.selectKeyCode);
-        return 0;
-    } 
+    for (int i = 0; i < MAX_PLAYERS; i++) {
+        PlayerKeyCodeData *playerkeyCodes = &keyCodes.playerKeyCodeData[i];
+        if (playerkeyCodes->upKeyCode <= 0 || playerkeyCodes->upKeyCode >= 255) {
+            printf("ERROR - PLAYER %d - Invalid Up Key Code: %d\n", i + 1, playerkeyCodes->upKeyCode);
+            return 0;
+        } else if (playerkeyCodes->downKeyCode <= 0 || playerkeyCodes->downKeyCode >= 255) {
+            printf("ERROR - PLAYER %d - Invalid Down Key Code: %d\n", i + 1, playerkeyCodes->downKeyCode);
+            return 0;
+        } else if (playerkeyCodes->leftKeyCode <= 0 || playerkeyCodes->leftKeyCode >= 255) {
+            printf("ERROR - PLAYER %d - Invalid Left Key Code: %d\n", i + 1, playerkeyCodes->leftKeyCode);
+            return 0;
+        } else if (playerkeyCodes->rightKeyCode <= 0 || playerkeyCodes->rightKeyCode >= 255) {
+            printf("ERROR - PLAYER %d - Invalid Right Key Code: %d\n", i + 1, playerkeyCodes->rightKeyCode);
+            return 0;
+        } else if (playerkeyCodes->sprintKeyCode <= 0 || playerkeyCodes->sprintKeyCode >= 255) {
+            printf("ERROR - PLAYER %d - Invalid Sprint Key Code: %d\n", i + 1, playerkeyCodes->sprintKeyCode);
+            return 0;
+        } else if (playerkeyCodes->dashKeyCode <= 0 || playerkeyCodes->dashKeyCode >= 255) {
+            printf("ERROR - PLAYER %d - Invalid Dash Key Code: %d\n", i + 1, playerkeyCodes->dashKeyCode);
+            return 0;
+        } else if (playerkeyCodes->attackKeyCode <= 0 || playerkeyCodes->attackKeyCode >= 255) {
+            printf("ERROR - PLAYER %d - Invalid Attack Key Code: %d\n", i + 1, playerkeyCodes->attackKeyCode);
+            return 0;
+        } else if (playerkeyCodes->interactKeyCode <= 0 || playerkeyCodes->interactKeyCode >= 255) {
+            printf("ERROR - PLAYER %d - Invalid Interact Key Code: %d\n", i + 1, playerkeyCodes->interactKeyCode);
+            return 0;
+        } else if (playerkeyCodes->selectKeyCode <= 0 || playerkeyCodes->selectKeyCode >= 255) {
+            printf("ERROR - PLAYER %d - Invalid Select Key Code: %d\n", i + 1, playerkeyCodes->selectKeyCode);
+            return 0;
+        } 
 
-    game->upKeyCode = keyCodes.upKeyCode;
-    game->leftKeyCode = keyCodes.leftKeyCode;
-    game->rightKeyCode = keyCodes.rightKeyCode;
-    game->downKeyCode = keyCodes.downKeyCode;
-    game->sprintKeyCode = keyCodes.sprintKeyCode;
-    game->dashKeyCode = keyCodes.dashKeyCode;
-    game->attackKeyCode = keyCodes.attackKeyCode;
-    game->interactKeyCode = keyCodes.interactKeyCode;
-    game->selectKeyCode = keyCodes.selectKeyCode;
-    game->pauseKeyCode = keyCodes.pauseKeyCode;
-
+        game->playerKeyCodeData[i].upKeyCode = playerkeyCodes->upKeyCode;
+        game->playerKeyCodeData[i].leftKeyCode = playerkeyCodes->leftKeyCode;
+        game->playerKeyCodeData[i].rightKeyCode = playerkeyCodes->rightKeyCode;
+        game->playerKeyCodeData[i].downKeyCode = playerkeyCodes->downKeyCode;
+        game->playerKeyCodeData[i].sprintKeyCode = playerkeyCodes->sprintKeyCode;
+        game->playerKeyCodeData[i].dashKeyCode = playerkeyCodes->dashKeyCode;
+        game->playerKeyCodeData[i].attackKeyCode = playerkeyCodes->attackKeyCode;
+        game->playerKeyCodeData[i].interactKeyCode = playerkeyCodes->interactKeyCode;
+        game->playerKeyCodeData[i].selectKeyCode = playerkeyCodes->selectKeyCode;
+        game->playerKeyCodeData[i].pauseKeyCode = playerkeyCodes->pauseKeyCode;
+    }
     return 1;
 }
 
@@ -633,13 +676,25 @@ int Load_Game_Data(Game *game) {
         printf("Invalid saved level: %d\n", state.level);
         return 0;
     }
-
-    if (state.health < 0 || state.health > MAX_HEALTH) {
-        printf("Invalid saved health: %d\n", state.health);
+    if (state.numPlayers <= 0 || state.numPlayers > MAX_PLAYERS) {
+        printf("Invalid saved numPlayers: %d", state.numPlayers);
         return 0;
+    }
+    if (state.damping <= 0 || state.damping > 1) {
+        printf("Invalid saved damping: %.2f", state.damping);
+    }
+
+    for (int i = 0; i < MAX_PLAYERS; i++) {
+        PlayerData *playerData = &state.playerData[i];
+        if (playerData->health < 0 || playerData->health > MAX_HEALTH) {
+            printf("Invalid saved health player %d: %d\n", i + 1, playerData->health);
+            return 0;
+        
+        }
     }
 
     game->currentLevel = state.level;
+    game->score = state.score;
     game->gameOver = 0;
     game->gameWin = 0;
     game->backToMenu = 0;
@@ -652,13 +707,9 @@ int Load_Game_Data(Game *game) {
         return 0;
     }
 
-
-    game->player.health = state.health;
-    game->player.score = state.score;
-    //game->player.attackDamage = state.attackDamage;
-
-
-
+    for (int i = 0; i < MAX_PLAYERS; i++) {
+        game->players[i].health = state.playerData[i].health;
+    }
     return 1;
 }
 
@@ -684,8 +735,11 @@ int Game_Has_Valid_Save(Game *game) {
         return 0;
     }
 
-    if (state.health < 0 || state.health > MAX_HEALTH) {
-        return 0;
+    for (int i = 0; i < MAX_PLAYERS; i++) {
+        PlayerData *playerData = &state.playerData[i];
+        if (playerData->health < 0 || playerData->health > MAX_HEALTH) {
+            return 0;
+        }
     }
 
     return 1;
@@ -700,10 +754,13 @@ int Game_Restart_Current_Level(Game *game) {
     game->gameWin = 0;
     game->backToMenu = 0;
 
-    game->player.attacking = 0;
-    game->player.beenHit = 0;
-    game->player.dead = 0;
-    game->player.dashing = 0;
+    for (int i = 0; i < game->numPlayers; i++) {
+        Player *player = &game->players[i];
+        player->attacking = 0;
+        player->beenHit = 0;
+        player->dead = 0;
+        player->dashing = 0;
+    }
 
     if (!Game_InitLevel(game, levelPaths[game->currentLevel])) {
         printf("Failed to restart level %d\n",game->currentLevel);
@@ -733,7 +790,9 @@ int Spawn_Init(Game *game, int x, int y, SpawnType type) {
 
 
 void Game_Update(GameHandler *handler) {
-    Player_Update(&handler->game);
+    for (int i = 0; i < handler->game.numPlayers; i++) {
+        Player_Update(handler, i);
+    }
     Barrel_Update(&handler->game);
     Enemy_Update(&handler->game);
     Carousel_Update(&handler->game);
@@ -854,17 +913,18 @@ void Game_Render(GameHandler *handler, HWND hwnd) {
         Game_Screen_Event(game, &game->gameWinAnim, hdc, bufferDC);
     }
 
-    Player *player = &game->player;
     Coin_Render(game, game->coins, game->coinCount, hdc, bufferDC);
     Spawn_Render(game, level->spawns, level->spawnCount, hdc, bufferDC);
     Barrel_Render(game, hdc, bufferDC);
-    Player_Render(player, game, hdc, bufferDC);
+    for (int i = 0; i < game->numPlayers; i++) {
+        Player_Render(game, i, hdc, bufferDC);
+    }
     Carousel_Render(game, hdc, bufferDC);
     Cannon_Render(game, hdc, bufferDC);
     Jet_Render(game, hdc, bufferDC);
     Enemy_Render(game, hdc, bufferDC);
 
-    Number_Render(game, SCORE_START_X, SCORE_START_Y, game->player.score, hdc, bufferDC);
+    Number_Render(game, SCORE_START_X, SCORE_START_Y, game->score, hdc, bufferDC);
     Number_Render(game, FPS_X, FPS_Y, (int)handler->fps, hdc, bufferDC);
     Number_Render(game, 750, 30, (int)game->time, hdc, bufferDC);
 
@@ -876,9 +936,16 @@ void Game_Render(GameHandler *handler, HWND hwnd) {
     
 }
 
+void Check_Game_Over(Game *game) {
+    int num;
+    for (int i = 0; i < game->numPlayers; i++) {
+        if (game->players[i].dead) num++;
+    }
+    game->gameOver = game->numPlayers == num;
+}
+
 static void Barrel_Update(Game *game) {
     Level *level = &game->level;
-    Player *player = &game->player;
 
     for (int i = 0; i < game->barrelCount; i++) {
         Barrel *barrel = &game->barrels[i];
@@ -996,6 +1063,12 @@ static void Barrel_Update(Game *game) {
                 barrel->frame = 1;
                 barrel->frameDelay = BARREL_FRAME_DELAY;
 
+                enemyBox.top -= BARREL_BREAK_HITBOX_INCREASE_Y;
+                enemyBox.left -= BARREL_BREAK_HITBOX_INCREASE_X;
+                enemyBox.bottom += BARREL_BREAK_HITBOX_INCREASE_Y;
+                enemyBox.right += BARREL_BREAK_HITBOX_INCREASE_X;
+                
+
                 enemy->beenHit = 1;
                 enemy->state = ENEMY_HURT;
                 enemy->attacking = 0;
@@ -1004,10 +1077,9 @@ static void Barrel_Update(Game *game) {
                 enemy->hurt.currentFrame = 0;
                 enemy->hurt.frameTimer = 0;
 
-                Enemy_Start_Knockback(game, enemy);
+                Enemy_Start_Knockback(enemy, barrel->x, barrel->y);
 
-                int health =
-                    enemy->health - player->attackDamage * 2;
+                int health = enemy->health - game->level.playerDamage * 2;
 
                 if (health <= 0) {
                     enemy->health = 0;
@@ -1015,8 +1087,6 @@ static void Barrel_Update(Game *game) {
                 } else {
                     enemy->health = health;
                 }
-
-                break;
             }
         }
     }
@@ -1027,22 +1097,22 @@ void Number_Render(Game *game, int startX, int startY, int num, HDC hdc, HDC buf
     int digits[20];
 
     if (num == 0) {
-        HDC scoreDC = CreateCompatibleDC(hdc);
-        SelectObject(scoreDC, game->scoreImg);
+        HDC numberDC = CreateCompatibleDC(hdc);
+        SelectObject(numberDC, game->numbersImg);
         TransparentBlt(
             bufferDC,
             startX,
             startY,
             NUMBERS_FRAME_WIDTH,
             NUMBERS_FRAME_HEIGHT,
-            scoreDC,
+            numberDC,
             0,
             0,
             NUMBERS_FRAME_WIDTH,
             NUMBERS_FRAME_HEIGHT,
             RGB(0, 0, 0)
         );
-        DeleteDC(scoreDC);
+        DeleteDC(numberDC);
         return;
     }
 
@@ -1056,8 +1126,8 @@ void Number_Render(Game *game, int startX, int startY, int num, HDC hdc, HDC buf
         int j = (count - 1) - i;
         int x = (NUMBERS_FRAME_WIDTH * j) + startX;
         int y = startY;
-        HDC scoreDC = CreateCompatibleDC(hdc);
-        SelectObject(scoreDC, game->scoreImg);
+        HDC numberDC = CreateCompatibleDC(hdc);
+        SelectObject(numberDC, game->numbersImg);
         int srcX = digits[i] * NUMBERS_FRAME_WIDTH;
         TransparentBlt(
             bufferDC,
@@ -1065,14 +1135,14 @@ void Number_Render(Game *game, int startX, int startY, int num, HDC hdc, HDC buf
             y,
             NUMBERS_FRAME_WIDTH,
             NUMBERS_FRAME_HEIGHT,
-            scoreDC,
+            numberDC,
             srcX,
             0,
             NUMBERS_FRAME_WIDTH,
             NUMBERS_FRAME_HEIGHT,
             RGB(0, 0, 0)
         );
-        DeleteDC(scoreDC);
+        DeleteDC(numberDC);
     }
 }
 
@@ -1221,7 +1291,7 @@ static int Level_Won(Game *game) {
     return 1;
 }
 
-void Spawn_Jet(Game *game) {
+void Spawn_Jet(Game *game, int pIndex) {
     Jet *jet = NULL;
 
     for (int i = 0; i < game->jetCount; i++) {
@@ -1241,9 +1311,10 @@ void Spawn_Jet(Game *game) {
         game->jetCount++;
     }
     jet->x = game->camera.x + game->camera.width + JET_FRAME_WIDTH;
-    jet->y = game->player.y;
+    jet->y = game->players[pIndex].y;
     jet->speed = JET_SPEED;
     jet->remove = 0;
+    jet->player = pIndex;
 
     New_Image_Init(&jet->anim, JET_FRAME_WIDTH, JET_FRAME_HEIGHT, JET_FRAME_DELAY, (int[]){JET_FRAMES, JET_FRAMES, JET_FRAMES, JET_FRAMES});
     Bomb *bomb = &jet->bomb;
@@ -1269,7 +1340,7 @@ static void Jet_Update(Game *game)
 
             jet->x -= jet->speed;
 
-            if (jet->x < game->player.x && bomb->remove) {
+            if (jet->x < game->players[jet->player].x && bomb->remove) {
                 bomb->x = jet->x + (JET_FRAME_WIDTH / 2)
                                   - (BOMB_FRAME_WIDTH / 2);
 
@@ -1307,41 +1378,42 @@ static void Jet_Update(Game *game)
 
             int explosionX = bomb->x + bombOffset;
             int explosionY = bomb->y + bombOffset;
+            for (int i = 0; i < game->numPlayers; i++) {
+                Player *player = &game->players[i];
 
-            int playerX =
-                game->player.x + game->player.hitboxOffsetX;
+                int playerX = player->x + player->hitboxOffsetX;
+                int playerY = player->y + player->hitboxOffsetY;
 
-            int playerY =
-                game->player.y + game->player.hitboxOffsetY;
+                if (!bomb->dealtDamage &&
+                    RectsOverlap(
+                        explosionX,
+                        explosionY,
+                        radius,
+                        radius,
+                        playerX,
+                        playerY,
+                        player->hitboxWidth,
+                        player->hitboxHeight
+                    )) {
 
-            if (!bomb->dealtDamage &&
-                RectsOverlap(
-                    explosionX,
-                    explosionY,
-                    radius,
-                    radius,
-                    playerX,
-                    playerY,
-                    game->player.hitboxWidth,
-                    game->player.hitboxHeight
-                )) {
+                    player->health -= bomb->damage;
 
-                game->player.health -= bomb->damage;
+                    if (player->health <= 0) {
+                        player->health = 0;
+                        player->dead = 1;
+                        Check_Game_Over(game);
+                    } else {
+                        player->beenHit = 1;
+                    }
 
-                if (game->player.health <= 0) {
-                    game->player.health = 0;
-                    game->player.dead = 1;
-                } else {
-                    game->player.beenHit = 1;
+                    bomb->dealtDamage = 1;
+
+                    Camera_Shake(
+                        &game->camera,
+                        PLAYER_HIT_SHAKE_DURATION,
+                        PLAYER_HIT_SHAKE_STRENGTH
+                    );
                 }
-
-                bomb->dealtDamage = 1;
-
-                Camera_Shake(
-                    &game->camera,
-                    PLAYER_HIT_SHAKE_DURATION,
-                    PLAYER_HIT_SHAKE_STRENGTH
-                );
             }
         }
         if (finished) {
@@ -1493,9 +1565,20 @@ static void Game_UpdateCamera(Game *game)
 
     int levelWidth = level->width * TILE_SIZE;
     int levelHeight = level->height * TILE_SIZE;
+    
+    int camX = 0;
+    int camY = 0;
+    int numPlayerAlive = 0;
+    for (int i = 0; i < game->numPlayers; i++) {
+        Player *player = &game->players[i];
+        if (player->remove) continue;
+        numPlayerAlive++;
+        camX += player->x + player->spriteWidth / 2 - game->camera.width / 2;
+        camY += player->y + player->spriteHeight / 2 - game->camera.height / 2;
+    }
 
-    game->camera.x = game->player.x + game->player.spriteWidth / 2 - game->camera.width / 2;
-    game->camera.y = game->player.y + game->player.spriteHeight / 2 - game->camera.height / 2;
+    game->camera.x += ((camX / numPlayerAlive) - game->camera.x) * game->camera.damping;
+    game->camera.y += ((camY / numPlayerAlive) - game->camera.y) * game->camera.damping;
 
     if (game->camera.x < 0) game->camera.x = 0;
     if (game->camera.y < 0) game->camera.y = 0;
@@ -1623,8 +1706,9 @@ int Check_Distance_Range(int x1, int y1, int width1, int height1, int x2, int y2
     int dx = centerX1 - centerX2;
     int dy = centerY1 - centerY2;
 
-    int inRange = (dx * dx + dy * dy) <= (range * range);
-    return inRange;
+    int distance = (dx * dx + dy * dy);
+    int inRange = distance <= (range * range);
+    return inRange ? distance : 0;
 }
 
 void Get_Attack_Box(int x, int y, int hitboxOffsetX, int hitboxOffsetY, int hitboxWidth, int hitboxHeight, int dir, int range, RECT *attackBox) {
@@ -1666,15 +1750,15 @@ SpawnType Random_Spawn() {
     }
 }
 
-void Apply_Spawn_Effect(Game *game, Spawn *spawn) {
+void Apply_Spawn_Effect(Game *game, Spawn *spawn, int pIndex) {
     switch (spawn->type) {
         case HEALTH_BOX:
-            int health = game->player.health + HEALTH_BOX_AMOUNT;
-            game->player.health = (health < MAX_HEALTH) ? health : MAX_HEALTH;
+            int health = game->players[pIndex].health + HEALTH_BOX_AMOUNT;
+            game->players[pIndex].health = (health < MAX_HEALTH) ? health : MAX_HEALTH;
             return;
         case STRENGTH_BOX:
-            int strength = game->player.attackDamage + STRENGTH_BOX_AMOUNT;
-            game->player.attackDamage = (strength < MAX_ATTACK_DAMAGE) ? strength : MAX_ATTACK_DAMAGE;
+            int strength = game->players[pIndex].attackDamage + STRENGTH_BOX_AMOUNT;
+            game->players[pIndex].attackDamage = (strength < MAX_ATTACK_DAMAGE) ? strength : MAX_ATTACK_DAMAGE;
             return;
         case BOX_COUNT:
             return;

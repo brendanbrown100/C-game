@@ -67,11 +67,17 @@ static void Bullet_Update(Game *game, Cannon *cannon) {
             bullet->remove = 1;
         }
 
-        if (Bullet_Player_Collision(game, bullet)) {
-            int health = game->player.health - bullet->damage;
-            game->player.health = health > 0 ? health : 0;
-            if (health > 0) game->player.beenHit = 1;
-            else game->player.dead = 1;
+        int pIndex = Bullet_Player_Collision(game, bullet);
+        if (pIndex >= 0) {
+            Player *player = &game->players[pIndex];
+
+            int health = player->health - bullet->damage;
+            player->health = health > 0 ? health : 0;
+            if (health > 0) player->beenHit = 1;
+            else {
+                player->dead = 1;
+                Check_Game_Over(game);
+            }
 
             Camera_Shake(&game->camera, PLAYER_HIT_SHAKE_DURATION, PLAYER_HIT_SHAKE_STRENGTH);
             bullet->remove = 1;
@@ -193,16 +199,18 @@ static void Cannon_Shoot(Cannon *cannon) {
 
 
 static int Bullet_Player_Collision(Game *game, Bullet *bullet) {
-    Player *player = &game->player;
+    for (int i = 0; i < game->numPlayers; i++) {
+        Player *player = &game->players[i];
 
-    int playerX = player->x;
-    int playerY = player->y;
+        int playerX = player->x;
+        int playerY = player->y;
 
-    playerX += player->hitboxOffsetX;
-    playerY += player->hitboxOffsetY;
+        playerX += player->hitboxOffsetX;
+        playerY += player->hitboxOffsetY;
 
-    if (RectsOverlap(playerX, playerY, player->hitboxWidth, player->hitboxHeight, bullet->x, bullet->y, BULLET_FRAME_WIDTH, BULLET_FRAME_HEIGHT)) {
-        return 1;
+        if (RectsOverlap(playerX, playerY, player->hitboxWidth, player->hitboxHeight, bullet->x, bullet->y, BULLET_FRAME_WIDTH, BULLET_FRAME_HEIGHT)) {
+            return i;
+        }
     }
-    return 0;
+    return -1;
 }

@@ -41,9 +41,9 @@ void Home_Init(Menu *menu) {
 void Home_Update(GameHandler *handler) {
     Menu *menu = &handler->menu;
 
-    int upIsDown = (GetAsyncKeyState(handler->game.upKeyCode) & 0x8000) != 0;
-    int downIsDown = (GetAsyncKeyState(handler->game.downKeyCode) & 0x8000) != 0;
-    int selectIsDown = (GetAsyncKeyState(handler->game.selectKeyCode) & 0x8000) != 0;
+    int upIsDown = (GetAsyncKeyState(handler->game.playerKeyCodeData[0].upKeyCode) & 0x8000) != 0;
+    int downIsDown = (GetAsyncKeyState(handler->game.playerKeyCodeData[0].downKeyCode) & 0x8000) != 0;
+    int selectIsDown = (GetAsyncKeyState(handler->game.playerKeyCodeData[0].selectKeyCode) & 0x8000) != 0;
 
     /*
      * A press happens only when:
