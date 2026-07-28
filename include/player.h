@@ -14,10 +14,10 @@
 #define FRAME_HEIGHT 64 
 #define PLAYER_WIDTH 22
 #define PLAYER_HEIGHT 22
-#define PLAYER_SPEED 4
-#define PLAYER_SPRINT_SPEED 6
-#define PLAYER_WALK_ATTACK_SPEED 2
-#define PLAYER_RUN_ATTACK_SPEED 4
+#define PLAYER_SPEED 120
+#define PLAYER_SPRINT_SPEED 180
+#define PLAYER_WALK_ATTACK_SPEED 60
+#define PLAYER_RUN_ATTACK_SPEED 120
 #define ATTACK_DAMAGE 50
 #define PLAYER_INTERACT_RANGE 32
 #define PLAYER_ATTACK_RANGE 16
@@ -40,11 +40,11 @@
 #define PLAYER_DASH_PATH              "Assets/Sprites/Player/armed_run.bmp"
 
 #define DASH_FRAMES 8
-#define DASH_FRAME_DELAY 4
+#define DASH_FRAME_DELAY 0.125f
 
-#define PLAYER_DASH_SPEED 12
-#define PLAYER_DASH_DURATION 10
-#define PLAYER_DASH_COOLDOWN 45
+#define PLAYER_DASH_SPEED 360
+#define PLAYER_DASH_DURATION 0.35f
+#define PLAYER_DASH_COOLDOWN 1.0f
 
 
 #define BARREL_IDLE_FRAMES_0 12
@@ -57,15 +57,15 @@
 #define BARREL_THROW_WALK_ATTACK_FRAMES 6
 #define BARREL_THROW_RUN_ATTACK_FRAMES 8
 
-#define BARREL_IDLE_FRAME_DELAY 10
-#define BARREL_RUN_FRAME_DELAY 6
-#define BARREL_WALK_FRAME_DELAY 8
-#define BARREL_THROW_IDLE_FRAME_DELAY 3
-#define BARREL_THROW_RUN_FRAME_DELAY 3
-#define BARREL_THROW_WALK_FRAME_DELAY 4
+#define BARREL_IDLE_FRAME_DELAY 0.31f
+#define BARREL_RUN_FRAME_DELAY 0.19f
+#define BARREL_WALK_FRAME_DELAY 0.25f
+#define BARREL_THROW_IDLE_FRAME_DELAY 0.09f
+#define BARREL_THROW_RUN_FRAME_DELAY 0.09f
+#define BARREL_THROW_WALK_FRAME_DELAY 0.125f
 
 #define BARREL_THROW_RELEASE_FRAME 3
-#define BARREL_SPEED 7
+#define BARREL_SPEED 210
 
 #define IDLE_FRAMES_0 12
 #define IDLE_FRAMES_1 12
@@ -80,14 +80,14 @@
 #define HURT_FRAMES 5
 #define DEATH_FRAMES 7
 
-#define IDLE_FRAME_DELAY 10
-#define RUN_FRAME_DELAY 6
-#define WALK_FRAME_DELAY 8
-#define IDLE_ATTACK_FRAME_DELAY 3
-#define RUN_ATTACK_FRAME_DELAY 3
-#define WALK_ATTACK_FRAME_DELAY 4
-#define HURT_FRAME_DELAY 5
-#define DEATH_FRAME_DELAY 10
+#define IDLE_FRAME_DELAY 0.31f
+#define RUN_FRAME_DELAY 0.187f
+#define WALK_FRAME_DELAY 0.187f
+#define IDLE_ATTACK_FRAME_DELAY 0.09f
+#define RUN_ATTACK_FRAME_DELAY 0.09f
+#define WALK_ATTACK_FRAME_DELAY 0.125f
+#define HURT_FRAME_DELAY 0.156f
+#define DEATH_FRAME_DELAY 0.31f
 
 #define PLAYER_START_ATTACK_FRAME 3
 #define PLAYER_END_ATTACK_FRAME 6
@@ -134,8 +134,15 @@ typedef struct Player {
     Animation death;
     PlayerState state;
 
-    int x;
-    int y;
+    float x;
+    float y;
+
+    float dashTimer;
+    float dashCooldown;
+
+    float dashSafeX;
+    float dashSafeY;
+
     int hitboxWidth;
     int hitboxHeight;
     int hitboxOffsetX;
@@ -166,12 +173,7 @@ typedef struct Player {
 
     int dashing;
     int dashDirection;
-    int dashTimer;
-    int dashCooldown;
     int dashWasDown;
-
-    int dashSafeX;
-    int dashSafeY;
 
     int hasBarrel;
     int throwingBarrel;

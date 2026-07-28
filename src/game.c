@@ -168,7 +168,7 @@ int Game_InitLevel(Game *game, const char *levelPath) {
 
     if (fscanf(
         file,
-        "%d %d %d %d %d %d",
+        "width:%d height:%d enemyCoolDown:%f playerDamage:%d enemySpawnProb:%d enemySpeed:%d",
         &level->width,
         &level->height,
         &level->enemyAttackCooldown,
@@ -399,6 +399,64 @@ int Game_InitLevel(Game *game, const char *levelPath) {
         }
     }
 
+    char name[31];
+    while (fscanf(file, " name:%30s ", name) == 1) {
+        int index;
+        if (strcmp(name, "enemy") == 0) {
+            int health, damage, speed, hasSpawn;
+            if (fscanf(file, "idx:%d health:%d damage:%d speed:%d hasSpawn:%d", &index, &health, &damage, &speed, &hasSpawn) != 5) {
+                printf("MAP ERROR: %s HAS INVALID FORMAT\n", name);
+                return 0;
+            } else if (index < 0 || index >= game->level.enemyCount ||
+                health <= 0 ||
+                damage <= 0 ||
+                speed <= 0 ||
+                hasSpawn < 0 || hasSpawn > 1) {
+                    printf("MAP ERROR: %s HAS INVALID ATRIBUTES\n", name);
+                    return 0;
+            }
+            Enemy *enemy = &game->level.enemies[index];
+            enemy->health = health;
+            enemy->damage = damage;
+            enemy->speed = speed;
+            enemy->hasSpawn = hasSpawn;
+        } else if (strcmp(name, "cannon") == 0) {
+            int damage, bulletSpeed;
+            float attackSpeed;
+            if (fscanf(file, "idx:%d damage:%d bulletSpeed:%d attackSpeed:%f", &index, &damage, &bulletSpeed, &attackSpeed) != 4) {
+                printf("MAP ERROR: %s HAS INVALID FORMAT\n", name);
+                return 0;
+            }
+            if (index < 0 || index >= game->cannonCount ||
+                damage <= 0 ||
+                bulletSpeed <= 0 ||
+                attackSpeed <= 0) {
+                    printf("MAP ERROR: %s HAS INVALID ATRIBUTES\n", name);
+                    return 0;
+            }
+            Cannon *cannon = &game->cannons[index];
+            cannon->damage = damage;
+            cannon->bulletSpeed = bulletSpeed;
+            cannon->attackDelay = attackSpeed;
+        } else if (strcmp(name, "carousel") == 0) {
+            int damage;
+            float frameDelay;
+            if (fscanf(file, "idx:%d damage:%d frameDelay:%f", &index, &damage, &frameDelay) != 3) {
+                printf("MAP ERROR: %s HAS INVALID FORMAT\n", name);
+                return 0;
+            }
+            if (index < 0 || index >= game->carouselCount ||
+                damage <= 0 ||
+                frameDelay <= 0) {
+                    printf("MAP ERROR: %s HAS INVALID ATRIBUTES\n", name);
+                    return 0;
+                }
+            Carousel *carousel = &game->carousels[index];
+            carousel->damage = damage;
+            carousel->frameDelay = frameDelay;
+        }
+    } 
+
     fclose(file);
     for (int i = 0; i < game->numPlayers; i++) {
         Player_Init(game, level, i);
@@ -432,8 +490,8 @@ void Spawn_Barrel(Game *game, int x, int y) {
         game->barrelCount++;
     }
 
-    barrel->x = x;
-    barrel->y = y;
+    barrel->x = (float)x;
+    barrel->y = (float)y;
     barrel->destroyed = 0;
     barrel->pickedUp = 0;
     barrel->frame = 0;
@@ -500,6 +558,7 @@ int Game_Start_New(Game *game) {
     for (int i = 0; i < game->numPlayers; i++) {
         Player *player = &game->players[i];
         player->health = MAX_HEALTH;
+        player->dead = 0;
     }
 
     if (!Game_InitLevel(game, levelPaths[0])) {
@@ -529,6 +588,8 @@ static int Load_Key_Codes(Game *game) {
         printf("FILE NOT FOUND: No key codes file found\n");
         PlayerKeyCodeData *p1 = &game->playerKeyCodeData[0];
         PlayerKeyCodeData *p2 = &game->playerKeyCodeData[1];
+        PlayerKeyCodeData *p3 = &game->playerKeyCodeData[2];
+        PlayerKeyCodeData *p4 = &game->playerKeyCodeData[3];
 
         p1->upKeyCode = 87; // 'W'
         p1->downKeyCode = 83; // 'S'
@@ -546,11 +607,33 @@ static int Load_Key_Codes(Game *game) {
         p2->leftKeyCode = 37; // LEFT key
         p2->rightKeyCode = 39; // RIGHT key
         p2->sprintKeyCode = 18; // ALT
-        p2->dashKeyCode = 78; // 'M'
-        p2->attackKeyCode = 77; // 'N'
-        p2->interactKeyCode = 75; // 'K'
-        p2->selectKeyCode = 76; // 'L'
-        p2->pauseKeyCode = 75; // 'K'
+        p2->dashKeyCode = 77; // 'M' key
+        p2->attackKeyCode = 78; // 'N' key
+        p2->interactKeyCode = 75; // 'K' key
+        p2->selectKeyCode = 76; // 'L' key
+        p2->pauseKeyCode = 74; // 'J' key
+
+        p3->upKeyCode = 0;
+        p3->downKeyCode = 0;
+        p3->leftKeyCode = 0;
+        p3->rightKeyCode = 0;
+        p3->sprintKeyCode = 0; 
+        p3->dashKeyCode = 0; 
+        p3->attackKeyCode = 0; 
+        p3->interactKeyCode = 0; 
+        p3->selectKeyCode = 0; 
+        p3->pauseKeyCode = 51; 
+
+        p4->upKeyCode = 0;
+        p4->downKeyCode = 0;
+        p4->leftKeyCode = 0;
+        p4->rightKeyCode = 0;
+        p4->sprintKeyCode = 0; 
+        p4->dashKeyCode = 0; 
+        p4->attackKeyCode = 0; 
+        p4->interactKeyCode = 0; 
+        p4->selectKeyCode = 0; 
+        p4->pauseKeyCode = 52; 
         return 0;
     }
 
@@ -569,6 +652,8 @@ static int Load_Key_Codes(Game *game) {
         printf("FILE EMPTY: No key codes file found\n");
         PlayerKeyCodeData *p1 = &game->playerKeyCodeData[0];
         PlayerKeyCodeData *p2 = &game->playerKeyCodeData[1];
+        PlayerKeyCodeData *p3 = &game->playerKeyCodeData[2];
+        PlayerKeyCodeData *p4 = &game->playerKeyCodeData[3];
 
         p1->upKeyCode = 87; // 'W'
         p1->downKeyCode = 83; // 'S'
@@ -586,11 +671,33 @@ static int Load_Key_Codes(Game *game) {
         p2->leftKeyCode = 37; // LEFT key
         p2->rightKeyCode = 39; // RIGHT key
         p2->sprintKeyCode = 18; // ALT
-        p2->dashKeyCode = 78; // 'M'
-        p2->attackKeyCode = 77; // 'N'
-        p2->interactKeyCode = 75; // 'K'
-        p2->selectKeyCode = 76; // 'L'
-        p2->pauseKeyCode = 75; // 'K'
+        p2->dashKeyCode = 77; // 'M' key
+        p2->attackKeyCode = 78; // 'N' key
+        p2->interactKeyCode = 75; // 'K' key
+        p2->selectKeyCode = 76; // 'L' key
+        p2->pauseKeyCode = 74; // 'J' key
+
+        p3->upKeyCode = 0;
+        p3->downKeyCode = 0;
+        p3->leftKeyCode = 0;
+        p3->rightKeyCode = 0;
+        p3->sprintKeyCode = 0; 
+        p3->dashKeyCode = 0; 
+        p3->attackKeyCode = 0; 
+        p3->interactKeyCode = 0; 
+        p3->selectKeyCode = 0; 
+        p3->pauseKeyCode = 0; 
+
+        p4->upKeyCode = 0;
+        p4->downKeyCode = 0;
+        p4->leftKeyCode = 0;
+        p4->rightKeyCode = 0;
+        p4->sprintKeyCode = 0; 
+        p4->dashKeyCode = 0; 
+        p4->attackKeyCode = 0; 
+        p4->interactKeyCode = 0; 
+        p4->selectKeyCode = 0; 
+        p4->pauseKeyCode = 0; 
 
         return 0;
     }
@@ -901,13 +1008,13 @@ void Game_Render(GameHandler *handler, HWND hwnd) {
     DeleteDC(tileDC);
 
     if (game->gameOver) {
-        if (Animation_Update(&game->gameOverAnim, 0)) {
+        if (Animation_Update(&game->gameOverAnim, 0, game->deltaTime)) {
             game->gameOverAnim.currentFrame = GAME_OVER_FRAMES - 1;
             game->backToMenu = 1;
         }
         Game_Screen_Event(game, &game->gameOverAnim, hdc, bufferDC);
     } else if (game->gameWin) {
-        if (Animation_Update(&game->gameWinAnim, 0)) {
+        if (Animation_Update(&game->gameWinAnim, 0, game->deltaTime)) {
             game->gameWinAnim.currentFrame = GAME_WIN_FRAMES - 1;
         }
         Game_Screen_Event(game, &game->gameWinAnim, hdc, bufferDC);
@@ -937,7 +1044,7 @@ void Game_Render(GameHandler *handler, HWND hwnd) {
 }
 
 void Check_Game_Over(Game *game) {
-    int num;
+    int num = 0;
     for (int i = 0; i < game->numPlayers; i++) {
         if (game->players[i].dead) num++;
     }
@@ -959,9 +1066,9 @@ static void Barrel_Update(Game *game) {
         }
 
         if (barrel->destroyed) {
-            barrel->frameDelay--;
+            barrel->frameDelay -= game->deltaTime;
 
-            if (barrel->frameDelay <= 0) {
+            if (barrel->frameDelay <= 0.0f) {
                 barrel->frameDelay = BARREL_FRAME_DELAY;
                 barrel->frame++;
 
@@ -982,19 +1089,19 @@ static void Barrel_Update(Game *game) {
 
         switch (barrel->dir) {
             case DIR_DOWN:
-                newY += barrel->speed;
+                newY += barrel->speed * game->deltaTime;
                 break;
 
             case DIR_UP:
-                newY -= barrel->speed;
+                newY -= barrel->speed * game->deltaTime;
                 break;
 
             case DIR_LEFT:
-                newX -= barrel->speed;
+                newX -= barrel->speed * game->deltaTime;
                 break;
 
             case DIR_RIGHT:
-                newX += barrel->speed;
+                newX += barrel->speed * game->deltaTime;
                 break;
         }
 
@@ -1005,13 +1112,13 @@ static void Barrel_Update(Game *game) {
 
         if (barrel->isVerticle) {
             hitboxOffsetX = BARREL_VERT_HITBOXOFFSET_X;
-            hitboxOffsetY = BARREL_VERT_HITBOXOFFSET_Y;
+            hitboxOffsetY = 11;
             hitboxWidth = BARREL_VERT_WIDTH;
-            hitboxHeight = BARREL_VERT_HEIGHT;
+            hitboxHeight = 10;
         } else {
-            hitboxOffsetX = BARREL_HORIZ_HITBOXOFFSET_X;
+            hitboxOffsetX = 11;
             hitboxOffsetY = BARREL_HORIZ_HITBOXOFFSET_Y;
-            hitboxWidth = BARREL_HORIZ_WIDTH;
+            hitboxWidth = 10;
             hitboxHeight = BARREL_HORIZ_HEIGHT;
         }
 
@@ -1029,6 +1136,14 @@ static void Barrel_Update(Game *game) {
             barrel->frame = 1;
             barrel->frameDelay = BARREL_FRAME_DELAY;
             continue;
+        }
+
+        if (barrel->isVerticle) {
+            hitboxOffsetY = BARREL_VERT_HITBOXOFFSET_Y;
+            hitboxHeight = BARREL_VERT_HEIGHT;
+        } else {
+            hitboxOffsetX = BARREL_HORIZ_HITBOXOFFSET_X;
+            hitboxWidth = BARREL_HORIZ_WIDTH;
         }
 
         barrel->x = newX;
@@ -1075,7 +1190,7 @@ static void Barrel_Update(Game *game) {
                 enemy->attackHit = 0;
 
                 enemy->hurt.currentFrame = 0;
-                enemy->hurt.frameTimer = 0;
+                enemy->hurt.frameTimer = 0.0f;
 
                 Enemy_Start_Knockback(enemy, barrel->x, barrel->y);
 
@@ -1160,7 +1275,7 @@ void Spawn_Render(Game *game, Spawn spawns[], int spawnCount, HDC hdc, HDC buffe
 
         HDC spriteDC = CreateCompatibleDC(hdc);
         SelectObject(spriteDC, anim->image);
-        Animation_Update(anim, 0);
+        Animation_Update(anim, 0, game->deltaTime);
 
         int srcX = anim->currentFrame * anim->frameWidth;
         int srcY = 0;
@@ -1195,7 +1310,7 @@ void Coin_Render(Game *game, Coin coins[], int coinCount, HDC hdc, HDC bufferDC)
         HDC spriteDC = CreateCompatibleDC(hdc);
         SelectObject(spriteDC, anim->image);
 
-        Animation_Update(anim, 0);
+        Animation_Update(anim, 0, game->deltaTime);
         int srcX = anim->currentFrame * anim->frameWidth;
         int srcY = 0;
 
@@ -1231,9 +1346,9 @@ static void Barrel_Render(Game *game, HDC hdc, HDC bufferDC) {
          * The player carrying animation already shows the barrel.
          * Do not draw the world barrel while carried.
          */
-        if (barrel->pickedUp) {
-            continue;
-        }
+        // if (barrel->pickedUp) {
+        //     continue;
+        // }
 
         HBITMAP img =
             barrel->isVerticle ?
@@ -1243,8 +1358,8 @@ static void Barrel_Render(Game *game, HDC hdc, HDC bufferDC) {
         HBITMAP oldImage =
             SelectObject(barrelDC, img);
 
-        int screenX = barrel->x - game->camera.x;
-        int screenY = barrel->y - game->camera.y;
+        int screenX = (int)barrel->x - game->camera.x;
+        int screenY = (int)barrel->y - game->camera.y;
 
         int srcX = barrel->frame * BARREL_WIDTH;
         int srcY = 0;
@@ -1329,18 +1444,17 @@ void Spawn_Jet(Game *game, int pIndex) {
 
 }
 
-static void Jet_Update(Game *game)
-{
+static void Jet_Update(Game *game) {
     for (int i = 0; i < game->jetCount; i++) {
         Jet *jet = &game->jets[i];
         Bomb *bomb = &jet->bomb;
 
         if (!jet->remove) {
-            New_Animation_Update(&jet->anim, 0);
+            New_Animation_Update(&jet->anim, 0, game->deltaTime);
 
             jet->x -= jet->speed;
 
-            if (jet->x < game->players[jet->player].x && bomb->remove) {
+            if (jet->x < (int)game->players[jet->player].x && bomb->remove) {
                 bomb->x = jet->x + (JET_FRAME_WIDTH / 2)
                                   - (BOMB_FRAME_WIDTH / 2);
 
@@ -1352,7 +1466,7 @@ static void Jet_Update(Game *game)
                 bomb->radius = 0;
                 bomb->dealtDamage = 0;
                 bomb->anim.currentFrame = 0;
-                bomb->anim.frameTimer = 0;
+                bomb->anim.frameTimer = 0.0f;
             }
 
             if (jet->x + JET_FRAME_WIDTH < game->camera.x) {
@@ -1364,7 +1478,7 @@ static void Jet_Update(Game *game)
             continue;
         }
 
-        int finished = New_Animation_Update(&bomb->anim, 0);
+        int finished = New_Animation_Update(&bomb->anim, 0, game->deltaTime);
 
         if (bomb->anim.currentFrame >= BOMB_EXPLODE_FRAME) {
             int frame =
@@ -1381,8 +1495,8 @@ static void Jet_Update(Game *game)
             for (int i = 0; i < game->numPlayers; i++) {
                 Player *player = &game->players[i];
 
-                int playerX = player->x + player->hitboxOffsetX;
-                int playerY = player->y + player->hitboxOffsetY;
+                int playerX = (int)player->x + player->hitboxOffsetX;
+                int playerY = (int)player->y + player->hitboxOffsetY;
 
                 if (!bomb->dealtDamage &&
                     RectsOverlap(
@@ -1528,11 +1642,11 @@ int RectsOverlap(int ax, int ay, int aw, int ah, int bx, int by, int bw, int bh)
            ay + ah > by;
 }
 
-int New_Animation_Update(NewAnimation *animation, int direction) {
-    animation->frameTimer++;
+int New_Animation_Update(NewAnimation *animation, int direction, float deltaTime) {
+    animation->frameTimer += deltaTime;
 
     if (animation->frameTimer >= animation->frameDelay) {
-        animation->frameTimer = 0;
+        animation->frameTimer = 0.0f;
         animation->currentFrame++;
 
         if (animation->currentFrame >= animation->frameCount[direction]) {
@@ -1543,11 +1657,11 @@ int New_Animation_Update(NewAnimation *animation, int direction) {
     return 0;
 }
 
-int Animation_Update(Animation *animation, int direction) {
-    animation->frameTimer++;
+int Animation_Update(Animation *animation, int direction, float deltaTime) {
+    animation->frameTimer += deltaTime;
 
     if (animation->frameTimer >= animation->frameDelay) {
-        animation->frameTimer = 0;
+        animation->frameTimer = 0.0f;
         animation->currentFrame++;
 
         if (animation->currentFrame >= animation->frameCount[direction]) {
@@ -1573,10 +1687,10 @@ static void Game_UpdateCamera(Game *game)
         Player *player = &game->players[i];
         if (player->remove) continue;
         numPlayerAlive++;
-        camX += player->x + player->spriteWidth / 2 - game->camera.width / 2;
-        camY += player->y + player->spriteHeight / 2 - game->camera.height / 2;
+        camX += (int)player->x + player->spriteWidth / 2 - game->camera.width / 2;
+        camY += (int)player->y + player->spriteHeight / 2 - game->camera.height / 2;
     }
-
+    if (numPlayerAlive == 0) return;
     game->camera.x += ((camX / numPlayerAlive) - game->camera.x) * game->camera.damping;
     game->camera.y += ((camY / numPlayerAlive) - game->camera.y) * game->camera.damping;
 
@@ -1594,26 +1708,26 @@ static void Game_UpdateCamera(Game *game)
     Camera_UpdateShake(&game->camera);
 }
 
-void Image_Init(Animation *anim, const char *path, int frameWidth, int frameHeight, int frameDelay, int *frameCounts) {
+void Image_Init(Animation *anim, const char *path, int frameWidth, int frameHeight, float frameDelay, int *frameCounts) {
     Load_Image(&anim->image, path);
 
     anim->frameWidth = frameWidth;
     anim->frameHeight = frameHeight;
     anim->frameDelay = frameDelay;
     anim->currentFrame = 0;
-    anim->frameTimer = 0;
+    anim->frameTimer = 0.0f;
 
     for (int i = 0; i < DIR_COUNT; i++) {
         anim->frameCount[i] = frameCounts[i];
     }
 }
 
-void New_Image_Init(NewAnimation *anim, int frameWidth, int frameHeight, int frameDelay, int *frameCounts) {
+void New_Image_Init(NewAnimation *anim, int frameWidth, int frameHeight, float frameDelay, int *frameCounts) {
     anim->frameWidth = frameWidth;
     anim->frameHeight = frameHeight;
     anim->frameDelay = frameDelay;
     anim->currentFrame = 0;
-    anim->frameTimer = 0;
+    anim->frameTimer = 0.0f;
 
     for (int i = 0; i < DIR_COUNT; i++) {
         anim->frameCount[i] = frameCounts[i];

@@ -9,7 +9,7 @@
 
 #define MAX_PATH_LENGTH 512
 #define MAX_SEARCH_TILES 10000
-#define ENEMY_PATH_TIMER 20
+#define ENEMY_PATH_TIMER 60
 
 #define ENEMY_FRAME_WIDTH 64
 #define ENEMY_FRAME_HEIGHT 64
@@ -17,10 +17,10 @@
 #define ENEMY_HEIGHT 30  // ----^----
 #define ARCHER_WIDTH 22
 #define ARCHER_HEIGHT 22
-#define ENEMY_ATTACK_SPEED 2
+#define ENEMY_ATTACK_SPEED 60
 #define ENEMY_HIT_BACK_STRENGTH 20.0f
 #define ENEMY_KNOCKBACK_DECAY 0.8f
-#define ENEMY_ATTACK_DISTANCE 50
+#define ENEMY_ATTACK_DISTANCE 55
 #define ENEMY_ATTACK_RANGE 24
 #define ENEMY_ATTACK_DAMAGE 20
 #define ENEMY_DETECT_RANGE 600
@@ -46,11 +46,11 @@
 #define SLIME_NORM_HURT_FRAMES 5
 #define SLIME_NORM_DEATH_FRAMES 10
 
-#define SLIME_NORM_IDLE_FRAME_DELAY 8
-#define SLIME_NORM_RUN_FRAME_DELAY 8
-#define SLIME_NORM_ATTACK_FRAME_DELAY 4
-#define SLIME_NORM_HURT_FRAME_DELAY 10
-#define SLIME_NORM_DEATH_FRAME_DELAY 4
+#define SLIME_NORM_IDLE_FRAME_DELAY 0.25f
+#define SLIME_NORM_RUN_FRAME_DELAY 0.25f
+#define SLIME_NORM_ATTACK_FRAME_DELAY 0.125f
+#define SLIME_NORM_HURT_FRAME_DELAY 0.3f
+#define SLIME_NORM_DEATH_FRAME_DELAY 0.125f
 
 #define ENEMY_IDLE_FRAMES 4
 #define ENEMY_RUN_FRAMES 8
@@ -59,12 +59,12 @@
 #define ENEMY_HURT_FRAMES 6
 #define ENEMY_DEATH_FRAMES 8
 
-#define ENEMY_IDLE_FRAME_DELAY 12
-#define ENEMY_RUN_FRAME_DELAY 8
-#define ENEMY_IDLE_ATTACK_FRAME_DELAY 5
-#define ENEMY_RUN_ATTACK_FRAME_DELAY 5
-#define ENEMY_HURT_FRAME_DELAY 10
-#define ENEMY_DEATH_FRAME_DELAY 10
+#define ENEMY_IDLE_FRAME_DELAY 0.35f
+#define ENEMY_RUN_FRAME_DELAY 0.25f
+#define ENEMY_IDLE_ATTACK_FRAME_DELAY 0.156f
+#define ENEMY_RUN_ATTACK_FRAME_DELAY 0.156f
+#define ENEMY_HURT_FRAME_DELAY 0.35f
+#define ENEMY_DEATH_FRAME_DELAY 0.35f
 
 #define ENEMY_START_ATTACK_FRAME 2
 #define ENEMY_END_ATTACK_FRAME 4
@@ -77,7 +77,7 @@
 
 #define ARROW_FRAMES 8
 #define ARCHER_SHOOT_FRAME 7
-#define ARROW_SPEED 5
+#define ARROW_SPEED 150
 
 
 #define ARROW_DAMAGE 20
@@ -134,15 +134,18 @@ typedef struct Enemy {
     EnemyType type;
     EnemyState state;
 
+    float x;
+    float y;
+
     float knockbackX;
     float knockbackY;
+
+    float attackCoolDown;
 
     int pathLength;
     int pathIndex;
     int pathTimer;
 
-    int x;
-    int y;
     int hitboxWidth;
     int hitboxHeight;
     int hitboxOffsetX;
@@ -153,8 +156,6 @@ typedef struct Enemy {
     int speed;
     int health;
 
-    int attackCoolDown;
-
     int moving;
     int direction;
     int attacking;
@@ -163,6 +164,8 @@ typedef struct Enemy {
     int attackHit;  
     int knockbackActive;
     int hasSpawn;
+
+    int damage;
 
     int beenHit;
     int dead;
@@ -173,8 +176,8 @@ typedef struct Enemy {
 typedef struct Arrow {
     Direction8 direction;
 
-    int x;
-    int y;
+    float x;
+    float y;
 
     int speed;
     int damage;

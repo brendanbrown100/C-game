@@ -44,7 +44,7 @@
 #define LEVEL_WIDTH 206
 #define LEVEL_HEIGHT 100
 
-#define MAX_PLAYERS 2
+#define MAX_PLAYERS 4
 #define MAX_SPAWNS 10
 #define MAX_COINS 100
 #define MAX_CAROUSELS 50
@@ -110,18 +110,18 @@
 #define BARREL_BREAK_HITBOX_INCREASE_Y 10
 
 #define BARREL_FRAME_COUNT 5
-#define BARREL_FRAME_DELAY 5
+#define BARREL_FRAME_DELAY 0.15f
 
 #define JET_FRAMES 3
 #define JET_FRAME_WIDTH 64
 #define JET_FRAME_HEIGHT 64
-#define JET_FRAME_DELAY 10
-#define JET_SPEED 10
+#define JET_FRAME_DELAY 0.31f
+#define JET_SPEED 300
 
 #define BOMB_FRAMES 11
 #define BOMB_FRAME_WIDTH 32
 #define BOMB_FRAME_HEIGHT 32
-#define BOMB_FRAME_DELAY 5
+#define BOMB_FRAME_DELAY 0.15f
 #define BOMB_EXPLODE_FRAME 5
 #define EXPL_START_SIZE 12
 #define EXPL_SIZE_INCREMENT 4
@@ -138,12 +138,12 @@
 #define GAME_OVER_FRAME_WIDTH 600
 #define GAME_OVER_FRAME_HEIGHT 300
 #define GAME_OVER_FRAMES 7
-#define GAME_OVER_FRAME_DELAY 10
+#define GAME_OVER_FRAME_DELAY 0.3f
 
 #define GAME_WIN_FRAME_WIDTH 600
 #define GAME_WIN_FRAME_HEIGHT 480
 #define GAME_WIN_FRAMES 7
-#define GAME_WIN_FRAME_DELAY 10
+#define GAME_WIN_FRAME_DELAY 0.3f
 
 #define COIN_HITBOX_OFFSET_X 1
 #define COIN_HITBOX_OFFSET_Y 0
@@ -153,14 +153,14 @@
 #define COIN_FRAME_WIDTH 16
 #define COIN_FRAME_HEIGHT 16
 #define COIN_FRAMES 4
-#define COIN_FRAME_DELAY 10
+#define COIN_FRAME_DELAY 0.3f
 
 #define COIN_VALUE 10
 
 #define PLAYER_HIT_SHAKE_DURATION 5
 #define PLAYER_HIT_SHAKE_STRENGTH 3
 
-#define CAMERA_DAMPING 0.5
+#define CAMERA_DAMPING 0.5f
 
 
 #define LEVEL_1_PATH "Assets/Levels/level1.txt"
@@ -235,6 +235,8 @@ typedef struct Level {
     Enemy enemies[MAX_ENEMIES];
     Spawn spawns[MAX_SPAWNS];
 
+    float enemyAttackCooldown;
+
     int enemyCount;
     int spawnCount;
 
@@ -242,7 +244,6 @@ typedef struct Level {
     int height;
     int startX;
     int startY;
-    int enemyAttackCooldown;
     int playerDamage;
     int enemyBoxDropProbability;
     int enemySpeed;
@@ -301,11 +302,12 @@ typedef struct Jet {
 } Jet;
 
 typedef struct Barrel {
-    int x;
-    int y;
+    float x;
+    float y;
+
+    float frameDelay;
 
     int frame;
-    int frameDelay;
     int speed;
 
     int dir;
@@ -368,6 +370,8 @@ typedef struct Game {
     HBITMAP barrelVertAnim; 
 
     float time;
+    float lastFrameTimeDiff;
+    float deltaTime;
 
     int score;
     
@@ -409,11 +413,11 @@ int Game_Init(Game *game);
 int Game_InitLevel(Game *game, const char *levelPath);
 void Game_Update(GameHandler *handler);
 void Game_Render(GameHandler *handler, HWND hwnd);
-void Image_Init(Animation *anim, const char *path, int frameWidth, int frameHeight, int frameDelay, int *frameCounts);
-void New_Image_Init(NewAnimation *anim, int frameWidth, int frameHeight, int frameDelay, int *frameCounts);
+void Image_Init(Animation *anim, const char *path, int frameWidth, int frameHeight, float frameDelay, int *frameCounts);
+void New_Image_Init(NewAnimation *anim, int frameWidth, int frameHeight, float frameDelay, int *frameCounts);
 int Collision_Check(Game *game, int newX, int newY, int hitboxWidth, int hitboxHeight, int hitboxOffsetX, int hitboxOffsetY);
-int Animation_Update(Animation *animation, int direction);
-int New_Animation_Update(NewAnimation *animation, int direction);
+int Animation_Update(Animation *animation, int direction, float deltaTime);
+int New_Animation_Update(NewAnimation *animation, int direction, float deltaTime);
 int RectsOverlap(int ax, int ay, int aw, int ah, int bx, int by, int bw, int bh);
 void Game_Next_Level(Game *game);
 SpawnType Random_Spawn();

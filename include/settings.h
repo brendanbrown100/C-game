@@ -3,6 +3,7 @@
 
 
 #define SETTINGS_TITLE_PATH   "Assets/Sprites/Static/settings-title.bmp"
+#define CURR_PLAYER_IMG_PATH  "Assets/Sprites/Static/player.bmp"
 #define UP_KEY_IMG_PATH       "Assets/Sprites/Static/up-key.bmp"
 #define DOWN_KEY_IMG_PATH     "Assets/Sprites/Static/down-key.bmp"
 #define LEFT_KEY_IMG_PATH     "Assets/Sprites/Static/left-key.bmp"
@@ -23,16 +24,17 @@
 #define SETTINGS_TITLE_Y        25
 
 #define SETTINGS_OPTION_START_Y      100
-#define SETTINGS_OPTION_INCREMENT_Y  35
+#define SETTINGS_OPTION_INCREMENT_Y  30
 #define SETTINGS_OPTION_X            100
 #define SETTINGS_OPTION_WIDTH        150
 #define SETTINGS_OPTION_HEIGHT       25
 #define KEY_CODE_VAL_X               275
 
-#define TOTAL_SETTINGS_OPTIONS  13
+#define TOTAL_SETTINGS_OPTIONS  14
 
 
 typedef enum SettingsOptionType {
+    PLAYER_OPTION,
     UP_KEY_OPTION,
     DOWN_KEY_OPTION,
     LEFT_KEY_OPTION,

@@ -12,12 +12,12 @@ int Handler_Init(GameHandler *handler) {
     Settings_Init(&handler->settingsMenu);
 
     handler->currState = MENU;
+    handler->game.lastFrameTimeDiff = 0.03125;
     handler->fps = 0;
     return 1;
 }
 
 void Handler_Update(GameHandler *handler) {
-    
     switch (handler->currState) {
         case MENU: 
             Home_Update(handler);

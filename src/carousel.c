@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <math.h>
 
-static int Carousel_Animation_Update(Carousel *carousel);
+static int Carousel_Animation_Update(Carousel *carousel, float time);
 static float Distance_Point_To_Segment(float px, float py, float ax, float ay, float bx, float by);
 static int Carousel_Player_Collision(Game *game, Carousel *carousel);
 
@@ -13,17 +13,17 @@ void Carousel_Init(Game *game) {
     for (int i = 0; i < game->carouselCount; i++) {
         Carousel *carousel = &game->carousels[i];
 
-        carousel->damage = CAROUSEL_DAMAGE;
+        carousel->damage = (carousel->damage) ? carousel->damage : CAROUSEL_DAMAGE;
         carousel->remove = 0;
-        carousel->attackHit = 0;
-        carousel->attackDelay = CAROUSEL_ATTACK_DELAY;
-
+        carousel->frameDelayStart = 0.0f;
+        carousel->frameDelay = (carousel->frameDelay) ? carousel->frameDelay : CAROUSEL_FRAME_DELAY;
+        
         Image_Init(
             &carousel->anim,
             CAROUSEL_PATH,
             CAROUSEL_FRAME_WIDTH,
             CAROUSEL_FRAME_HEIGHT,
-            CAROUSEL_FRAME_DELAY,
+            0,
             (int[]){CAROUSEL_FRAMES, CAROUSEL_FRAMES, CAROUSEL_FRAMES, CAROUSEL_FRAMES}
         );
 
@@ -35,19 +35,13 @@ void Carousel_Update(Game *game) {
         Carousel *carousel = &game->carousels[i];
         if (carousel->remove) continue;
 
-        Carousel_Animation_Update(carousel);
+        Carousel_Animation_Update(carousel, game->deltaTime);
 
-        if (carousel->attackDelay > 0) {
-            carousel->attackDelay--;
-            if (carousel->attackDelay <= 0) {
-                carousel->attackHit = 0;
-                carousel->attackDelay = 0;
-            }
-        }
 
         int pIndex = Carousel_Player_Collision(game, carousel);
-        if (pIndex >= 0 && carousel->attackHit == 0) {
+        if (pIndex >= 0) {
             Player *player = &game->players[pIndex];
+            if (player->beenHit) return;
 
             int health = player->health - carousel->damage;
             player->health = health > 0 ? health : 0;
@@ -58,8 +52,6 @@ void Carousel_Update(Game *game) {
             }
 
             Camera_Shake(&game->camera, PLAYER_HIT_SHAKE_DURATION, PLAYER_HIT_SHAKE_STRENGTH);
-            carousel->attackHit = 1;
-            carousel->attackDelay = CAROUSEL_ATTACK_DELAY;
         }
     }
 }
@@ -102,13 +94,12 @@ void Carousel_Render(Game *game, HDC hdc, HDC bufferDC) {
     }
 }
 
-static int Carousel_Animation_Update(Carousel *carousel) {
+static int Carousel_Animation_Update(Carousel *carousel, float deltaTime) {
     Animation *anim = &carousel->anim;
-    anim->frameTimer++;
 
-    if (anim->frameTimer >= anim->frameDelay) {
-        anim->frameTimer = 0;
-
+    carousel->frameDelayStart += deltaTime;
+    if (carousel->frameDelayStart >= carousel->frameDelay) {
+        carousel->frameDelayStart = 0.0f;
         if (carousel->clockWise) {
             anim->currentFrame++;
             
@@ -164,6 +155,7 @@ static float Distance_Point_To_Segment(float px, float py, float ax, float ay, f
 static int Carousel_Player_Collision(Game *game, Carousel *carousel) {
     for (int i = 0; i < game->numPlayers; i++) {
         Player *player = &game->players[i];
+        if (player->dead) continue;
         float centerX =
             carousel->x +
             CAROUSEL_FRAME_WIDTH / 2.0f;

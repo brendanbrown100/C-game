@@ -8,7 +8,7 @@
 #define CAROUSEL_FRAMES 18
 #define CAROUSEL_FRAME_WIDTH 208
 #define CAROUSEL_FRAME_HEIGHT 208
-#define CAROUSEL_FRAME_DELAY 3
+#define CAROUSEL_FRAME_DELAY 0.09f
 
 #define CAROUSEL_CENTER_SIZE 32
 #define CAROUSEL_ARM_LENGTH 71
@@ -29,13 +29,14 @@ typedef struct Game Game;
 typedef struct Carousel {
     Animation anim;
 
+    float frameDelayStart;
+    float frameDelay;
+
     int x;
     int y;
     int damage;
-    int attackDelay;
     
     int clockWise;
-    int attackHit;
 
     int remove;
 } Carousel;

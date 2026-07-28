@@ -1,4 +1,5 @@
 #include "main.h"
+#include "game_time.h"
 #include <time.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -68,10 +69,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             printf("ERROR: GAME UPDATE TOO LONG FOR %d FPS - %.3f > %.3f\n", FPS, duration, TIME_PER_FRAME);
         }
 
-    
         final = clock();
         duration = (double)(final - start) / CLOCKS_PER_SEC;
         handler->fps = 1.0 / duration;
+        handler->game.deltaTime = duration;
         handler->game.time += duration;
     }
     free(handler);

@@ -24,18 +24,17 @@
 #define CANNON_HITBOX_HEIGHT 26
 //#define CANNON_FRAME_DELAY 10
 
-#define CANNON_ATTACK_DELAY 30
+#define CANNON_ATTACK_DELAY 1.0
 
-#define BULLET_SPEED 5
+#define BULLET_SPEED 150
 
 #define BULLET_DAMAGE 20
 
 typedef struct Game Game;
 
 typedef struct Bullet {
-    int x;
-    int y;
-    int damage;
+    float x;
+    float y;
 
     int direction;
 
@@ -44,13 +43,18 @@ typedef struct Bullet {
 
 typedef struct Cannon {
     Bullet bullets[MAX_BULLETS];
-    int bulletCount;
+
+    float delayStartTime;
+    float attackDelay;
 
     int x;
     int y;
 
+    int bulletCount;
+
     int direction;
-    int attackDelay;
+    int bulletSpeed;
+    int damage;
 
     int remove;
 } Cannon;

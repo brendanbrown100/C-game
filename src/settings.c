@@ -20,6 +20,7 @@ void Settings_Init(Settings *settings) {
         option->remapDelay = 30;
     }
     settings->options[0].selected = 1;
+    Load_Image(&settings->options[PLAYER_OPTION].optionImg, CURR_PLAYER_IMG_PATH);
     Load_Image(&settings->options[UP_KEY_OPTION].optionImg, UP_KEY_IMG_PATH);
     Load_Image(&settings->options[DOWN_KEY_OPTION].optionImg, DOWN_KEY_IMG_PATH); 
     Load_Image(&settings->options[LEFT_KEY_OPTION].optionImg, LEFT_KEY_IMG_PATH); 
@@ -131,13 +132,7 @@ void Settings_Update(GameHandler *handler) {
                     game->playerKeyCodeData[settings->player].pauseKeyCode = virtualCode;
                     break;
                 
-                case NUM_PLAYERS_OPTION:
-                    break;
-
-                case DAMPING_OPTION:
-                    break;
-
-                case BACK_OPTION:
+                default:
                     break;
             }
 
@@ -181,16 +176,19 @@ void Settings_Update(GameHandler *handler) {
     /*
      * Normal settings-menu controls.
      */
+    int upKeyCode = (game->playerKeyCodeData[settings->player].upKeyCode > 0) ? game->playerKeyCodeData[settings->player].upKeyCode : VK_UP;
     int upIsDown =
-        (GetAsyncKeyState(game->playerKeyCodeData[settings->player].upKeyCode) &
+        (GetAsyncKeyState(upKeyCode) &
          0x8000) != 0;
 
+    int downKeyCode = (game->playerKeyCodeData[settings->player].downKeyCode > 0) ? game->playerKeyCodeData[settings->player].downKeyCode : VK_DOWN;
     int downIsDown =
-        (GetAsyncKeyState(game->playerKeyCodeData[settings->player].downKeyCode) &
+        (GetAsyncKeyState(downKeyCode) &
          0x8000) != 0;
 
+    int selectKeyCode = (game->playerKeyCodeData[settings->player].selectKeyCode > 0) ? game->playerKeyCodeData[settings->player].selectKeyCode : VK_RETURN;
     int selectIsDown =
-        (GetAsyncKeyState(game->playerKeyCodeData[settings->player].selectKeyCode) &
+        (GetAsyncKeyState(selectKeyCode) &
          0x8000) != 0;
 
     int upPressed =
@@ -270,6 +268,18 @@ void Settings_Update(GameHandler *handler) {
 
                 skip_damping:
 
+                settings->upWasDown = upIsDown;
+                settings->downWasDown = downIsDown;
+                settings->selectWasDown = selectIsDown;
+                return;
+            
+            case PLAYER_OPTION:
+                if (settings->player != 0) goto skip_player;
+                int player = settings->player;
+                player++;
+                if (player > handler->game.numPlayers) player = 1;
+                settings->player = player;
+                skip_player:
                 settings->upWasDown = upIsDown;
                 settings->downWasDown = downIsDown;
                 settings->selectWasDown = selectIsDown;
@@ -395,6 +405,7 @@ static int Get_KeyCode(Game *game, int type, int pIndex) {
         case (SELECT_KEY_OPTION):   return game->playerKeyCodeData[pIndex].selectKeyCode;
         case (PAUSE_KEY_OPTION):    return game->playerKeyCodeData[pIndex].pauseKeyCode;
         case (NUM_PLAYERS_OPTION):  return game->numPlayers;
+        case (PLAYER_OPTION):       return pIndex + 1;
         case (DAMPING_OPTION):      return (int) (game->camera.damping * 10);
         case (BACK_OPTION):         return 0;
         default:                    return 0;

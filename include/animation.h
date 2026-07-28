@@ -8,23 +8,25 @@
 typedef struct Animation {
     HBITMAP image;
 
+    float frameTimer;
+    float frameDelay;
+
     int frameWidth;
     int frameHeight;
     int frameCount[DIR_COUNT];
 
     int currentFrame;
-    int frameTimer;
-    int frameDelay;
 } Animation;
 
 typedef struct NewAnimation {
+    float frameTimer;
+    float frameDelay;
+
     int frameWidth;
     int frameHeight;
     int frameCount[DIR_COUNT];
 
     int currentFrame;
-    int frameTimer;
-    int frameDelay;
 } NewAnimation;
 
 #endif

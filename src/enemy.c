@@ -28,8 +28,8 @@ void Enemy_Init(Level *level) {
         if (!enemy->x || !enemy->y) break;
         enemy->spriteWidth = ENEMY_FRAME_WIDTH;
         enemy->spriteHeight = ENEMY_FRAME_HEIGHT;
-        enemy->speed = level->enemySpeed + (rand() % 3) - 1;
-        enemy->health = MAX_HEALTH;
+        enemy->speed = (enemy->speed) ? enemy->speed : level->enemySpeed + (rand() % 3) - 1;
+        enemy->health = (enemy->health) ? enemy->health : MAX_HEALTH;
         enemy->moving = 0;
         enemy->direction = DIR_DOWN;
         enemy->state = ENEMY_IDLE;
@@ -42,7 +42,8 @@ void Enemy_Init(Level *level) {
         enemy->knockbackApplied = 0;
         enemy->beenHit = 0;
         enemy->attackCoolDown = level->enemyAttackCooldown;
-        enemy->hasSpawn = (rand() % 100) < level->enemyBoxDropProbability;
+        enemy->hasSpawn = (enemy->hasSpawn) ? enemy->hasSpawn : (rand() % 100) < level->enemyBoxDropProbability;
+        enemy->damage = (enemy->damage) ? enemy->damage : ENEMY_ATTACK_DAMAGE;
 
         if (enemy->type == MELEE) {
             Melee_Anim_Init(enemy);
@@ -173,14 +174,14 @@ void Enemy_Update(Game *game) {
         Enemy *enemy = &level->enemies[i];
 
         Animation *anim = Enemy_GetCurrentAnimation(enemy);
-        int finished = Animation_Update(anim, enemy->direction);
+        int finished = Animation_Update(anim, enemy->direction, game->deltaTime);
 
         if (enemy->state == ENEMY_DEATH) {
             if (finished) {
                 enemy->remove = 1;
                 if (enemy->hasSpawn) {
                     SpawnType spawn = Random_Spawn();
-                    Spawn_Init(game, enemy->x, enemy->y, spawn);
+                    Spawn_Init(game, (int)enemy->x, (int)enemy->y, spawn);
                     //Create_Coin(game, enemy->x, enemy->y, COIN_VALUE);
                     enemy->hasSpawn = 0;
                 }
@@ -194,7 +195,7 @@ void Enemy_Update(Game *game) {
             enemy->attackHit = 0;
 
             
-            if (enemy->hurt.frameTimer == 0) Enemy_Apply_Knockback(game, enemy);
+            if (enemy->hurt.frameTimer == 0.0f) Enemy_Apply_Knockback(game, enemy);
 
 
             if (finished) {
@@ -229,17 +230,18 @@ void Enemy_Update(Game *game) {
             enemy->playerAttackingIdx = pIndex;
             enemy->state = ENEMY_IDLE_ATTACK;
             enemy->idleAttack.currentFrame = 0;
-            enemy->idleAttack.frameTimer = 0;
+            enemy->idleAttack.frameTimer = 0.0f;
             continue;
         }
 
         int inRange = 0;
-        int currBest, bestIndex;
+        int currBest = INT_MAX;
+        int bestIndex = -1;
         for (int i = 0; i < game->numPlayers; i++) {
             Player *player = &game->players[i];
             if (player->dead) continue;
-            int distance = Check_Distance_Range(enemy->x + enemy->hitboxOffsetX, enemy->y + enemy->hitboxOffsetY, enemy->hitboxWidth, enemy->hitboxHeight, player->x + player->hitboxOffsetX, player->y + player->hitboxOffsetY, player->hitboxWidth, player->hitboxHeight, ENEMY_DETECT_RANGE);
-            if (distance && distance > currBest) {
+            int distance = Check_Distance_Range((int)enemy->x + enemy->hitboxOffsetX, (int)enemy->y + enemy->hitboxOffsetY, enemy->hitboxWidth, enemy->hitboxHeight, (int)player->x + player->hitboxOffsetX, (int)player->y + player->hitboxOffsetY, player->hitboxWidth, player->hitboxHeight, ENEMY_DETECT_RANGE);
+            if (distance && distance < currBest) {
                 bestIndex = i;
                 currBest = distance;
                 inRange = 1;
@@ -255,7 +257,7 @@ void Enemy_Update(Game *game) {
 
         Enemy_Follow_Path(game, enemy);
 
-        if (Check_Fall(game, enemy->x, enemy->y, enemy->hitboxWidth, enemy->hitboxHeight, enemy->hitboxOffsetX, enemy->hitboxOffsetY)) {
+        if (Check_Fall(game, (int)enemy->x, (int)enemy->y, enemy->hitboxWidth, enemy->hitboxHeight, enemy->hitboxOffsetX, enemy->hitboxOffsetY)) {
             enemy->attacking = 0;
             enemy->attackHit = 0;
             enemy->state = ENEMY_DEATH;
@@ -298,8 +300,8 @@ void Enemy_Render(Game *game, HDC hdc, HDC bufferDC) {
         if (enemies[i].remove) continue;
         Animation *currentAnim = Enemy_GetCurrentAnimation(&enemies[i]);
 
-        int enemyScreenX = enemies[i].x - game->camera.x;
-        int enemyScreenY = enemies[i].y - game->camera.y;
+        int enemyScreenX = (int)enemies[i].x - game->camera.x;
+        int enemyScreenY = (int)enemies[i].y - game->camera.y;
 
         if (enemyScreenX < -enemies[i].spriteWidth || 
             enemyScreenX > game->camera.width + enemies[i].spriteWidth || 
@@ -345,8 +347,8 @@ static void Arrow_Render(Game *game, HDC hdc, HDC bufferDC) {
 
         if (arrow->remove) continue;
 
-        int arrowX = arrow->x - game->camera.x;
-        int arrowY = arrow->y - game->camera.y;
+        int arrowX = (int)arrow->x - game->camera.x;
+        int arrowY = (int)arrow->y - game->camera.y;
 
         if (arrowX < -ARROW_FRAME_WIDTH || arrowX > game->camera.width + ARROW_FRAME_WIDTH || arrowY < -ARROW_FRAME_HEIGHT || arrowY > game->camera.height + ARROW_FRAME_HEIGHT) continue;
 
@@ -387,29 +389,29 @@ static void Arrow_Update(Game *game) {
                 newY -= arrow->speed;
                 break;
             case (NE):
-                newX += (arrow->speed * 0.7);
-                newY -= (arrow->speed * 0.7);
+                newX += (arrow->speed * 0.7) * game->deltaTime;
+                newY -= (arrow->speed * 0.7) * game->deltaTime;
                 break;
             case (EAST):
                 newX += arrow->speed;
                 break;
             case (SE):
-                newY += (arrow->speed * 0.7);
-                newX += (arrow->speed * 0.7);
+                newY += (arrow->speed * 0.7) * game->deltaTime;
+                newX += (arrow->speed * 0.7) * game->deltaTime;
                 break;
             case (SOUTH):
-                newY += arrow->speed;
+                newY += arrow->speed * game->deltaTime;
                 break;
             case (SW):
-                newY += (arrow->speed * 0.7);
-                newX -= (arrow->speed * 0.7);
+                newY += (arrow->speed * 0.7) * game->deltaTime;
+                newX -= (arrow->speed * 0.7) * game->deltaTime;
                 break;
             case (WEST):
-                newX -= arrow->speed;
+                newX -= arrow->speed * game->deltaTime;
                 break;
             case (NW):
-                newX -= (arrow->speed * 0.7);
-                newY -= (arrow->speed * 0.7);
+                newX -= (arrow->speed * 0.7) * game->deltaTime;
+                newY -= (arrow->speed * 0.7) * game->deltaTime;
                 break;
         }
 
@@ -417,8 +419,8 @@ static void Arrow_Update(Game *game) {
         int tempY = (int)newY;
 
         if (!Collision_Check(game, tempX + ARROW_HITBOX_OFFSET_X, tempY + ARROW_HITBOX_OFFSET_Y, ARROW_FRAME_WIDTH, ARROW_FRAME_HEIGHT, 0, 0)) {
-            arrow->x = tempX;
-            arrow->y = tempY;
+            arrow->x = newX;
+            arrow->y = newY;
         } else {
             arrow->remove = 1;
         }
@@ -444,14 +446,14 @@ static int Arrow_Player_Collision(Game *game, Arrow *arrow) {
     for (int i = 0; i < game->numPlayers; i++) {
         Player *player = &game->players[i];
         if (player->dead) continue;
-        int playerX = player->x;
-        int playerY = player->y;
+        int playerX = (int)player->x;
+        int playerY = (int)player->y;
 
         playerX += player->hitboxOffsetX;
         playerY += player->hitboxOffsetY;
 
-        int arrowX = arrow->x + ARROW_HITBOX_OFFSET_X;
-        int arrowY = arrow->y + ARROW_HITBOX_OFFSET_Y;
+        int arrowX = (int)arrow->x + ARROW_HITBOX_OFFSET_X;
+        int arrowY = (int)arrow->y + ARROW_HITBOX_OFFSET_Y;
 
         if (RectsOverlap(playerX, playerY, player->hitboxWidth, player->hitboxHeight, arrowX, arrowY, ARROW_FRAME_WIDTH - ARROW_HITBOX_OFFSET_X, ARROW_FRAME_HEIGHT - ARROW_HITBOX_OFFSET_Y)) {
             return i;
@@ -488,11 +490,11 @@ static void Shoot_Arrow(Game *game, Enemy *enemy) {
         game->arrowCount++;
     }
 
-    int enemyCenterX = enemy->x + enemy->spriteWidth / 2;
-    int enemyCenterY = enemy->y + enemy->spriteHeight / 2;
+    int enemyCenterX = (int)enemy->x + enemy->spriteWidth / 2;
+    int enemyCenterY = (int)enemy->y + enemy->spriteHeight / 2;
 
-    int playerCenterX = player->x + player->spriteWidth / 2;
-    int playerCenterY = player->y + player->spriteHeight / 2;
+    int playerCenterX = (int)player->x + player->spriteWidth / 2;
+    int playerCenterY = (int)player->y + player->spriteHeight / 2;
 
     arrow->x = enemyCenterX;
     arrow->y = enemyCenterY;
@@ -509,8 +511,7 @@ static void Shoot_Arrow(Game *game, Enemy *enemy) {
     enemy->attackHit = 1;
 }
 
-static Direction8 GetDirection8(int diffX, int diffY)
-{
+static Direction8 GetDirection8(int diffX, int diffY) {
     double angle = atan2((double)diffY, (double)diffX);
     double degrees = angle * 180.0 / M_PI;
 
@@ -538,20 +539,25 @@ static Direction8 GetDirection8(int diffX, int diffY)
 
 static int Enemy_Can_Attack(Game *game, Enemy *enemy) {
     int distance = 0;
+    if (enemy->attackCoolDown > 0) {
+        enemy->attackCoolDown -= game->deltaTime;
+    }       
     if (enemy->type == MELEE) distance = ENEMY_ATTACK_DISTANCE;
     else if (enemy->type == ARCHER) distance = ARCHER_ATTACK_DISTANCE;
+    int closetPlayer = -1;
+    int minDist = INT_MAX;
     for (int i = 0; i < game->numPlayers; i++) {
         Player *player = &game->players[i];
         if (player->dead) continue;
-        if (!Check_Distance_Range(enemy->x + enemy->hitboxOffsetX, enemy->y + enemy->hitboxOffsetY, enemy->hitboxWidth, enemy->hitboxHeight, player->x + player->hitboxOffsetX, player->y + player->hitboxOffsetY, player->hitboxWidth, player->hitboxHeight, distance) || enemy->attackCoolDown > 0) {
-            enemy->attackCoolDown = (enemy->attackCoolDown > 0) ? enemy->attackCoolDown - 1 : 0;
+        int dist = Check_Distance_Range((int)enemy->x + enemy->hitboxOffsetX, (int)enemy->y + enemy->hitboxOffsetY, enemy->hitboxWidth, enemy->hitboxHeight, (int)player->x + player->hitboxOffsetX, (int)player->y + player->hitboxOffsetY, player->hitboxWidth, player->hitboxHeight, distance);
+        if (dist == 0 || enemy->attackCoolDown > 0) {
             continue;
         }
-        int enemyX = enemy->x + enemy->hitboxOffsetX + enemy->hitboxWidth / 2;
-        int enemyY = enemy->y + enemy->hitboxOffsetY + enemy->hitboxHeight / 2;
+        int enemyX = (int)enemy->x + enemy->hitboxOffsetX + enemy->hitboxWidth / 2;
+        int enemyY = (int)enemy->y + enemy->hitboxOffsetY + enemy->hitboxHeight / 2;
 
-        int playerX = player->x + player->hitboxOffsetX + player->hitboxWidth / 2;
-        int playerY = player->y + player->hitboxOffsetY + player->hitboxHeight / 2;
+        int playerX = (int)player->x + player->hitboxOffsetX + player->hitboxWidth / 2;
+        int playerY = (int)player->y + player->hitboxOffsetY + player->hitboxHeight / 2;
 
         int dx = (enemyX - playerX);
         int dy = (enemyY - playerY);
@@ -564,9 +570,12 @@ static int Enemy_Can_Attack(Game *game, Enemy *enemy) {
             else enemy->direction = ENEMY_DOWN;
         }
         enemy->attackCoolDown = game->level.enemyAttackCooldown;
-        return i;
+        if (dist < minDist) {
+            closetPlayer = i;
+            minDist = dist;
+        }
     }
-    return -1;
+   return closetPlayer;
 }
 
 static void Check_Enemy_Attack(Game *game, Enemy *enemy) {
@@ -580,7 +589,7 @@ static void Check_Enemy_Attack(Game *game, Enemy *enemy) {
     
         RECT attackBox;
         Get_Attack_Box(
-            enemy->x, enemy->y,
+            (int)enemy->x, (int)enemy->y,
             enemy->hitboxOffsetX, enemy->hitboxOffsetY,
             enemy->hitboxWidth, enemy->hitboxHeight,
             dir, ENEMY_ATTACK_RANGE,
@@ -588,14 +597,14 @@ static void Check_Enemy_Attack(Game *game, Enemy *enemy) {
         );
 
         RECT playerBox = {
-            player->x + player->hitboxOffsetX,
-            player->y + player->hitboxOffsetY,
-            player->x + player->hitboxOffsetX + player->hitboxWidth,
-            player->y + player->hitboxOffsetY + player->hitboxHeight
+            (int)player->x + player->hitboxOffsetX,
+            (int)player->y + player->hitboxOffsetY,
+            (int)player->x + player->hitboxOffsetX + player->hitboxWidth,
+            (int)player->y + player->hitboxOffsetY + player->hitboxHeight
         };
 
         if (!Rect_Overlap(attackBox, playerBox)) continue;
-        int health = player->health - ENEMY_ATTACK_DAMAGE;
+        int health = player->health - enemy->damage;
         player->health = health > 0 ? health : 0;
         if (health > 0) {
             player->beenHit = 1;
@@ -628,29 +637,29 @@ void Enemy_Apply_Knockback(Game *game, Enemy *enemy)
     if (!enemy->knockbackActive)
         return;
 
-    int newX = enemy->x + (int)enemy->knockbackX;
-    int newY = enemy->y + (int)enemy->knockbackY;
+    int newX = (int)enemy->x + (int)enemy->knockbackX;
+    int newY = (int)enemy->y + (int)enemy->knockbackY;
 
-    if (!Collision_Check(game, newX, enemy->y,
+    if (!Collision_Check(game, newX, (int)enemy->y,
         enemy->hitboxWidth,
         enemy->hitboxHeight,
         enemy->hitboxOffsetX,
         enemy->hitboxOffsetY))
     {
-        enemy->x = newX;
+        enemy->x += enemy->knockbackX;
     }
     else
     {
         enemy->knockbackX = 0;
     }
 
-    if (!Collision_Check(game, enemy->x, newY,
+    if (!Collision_Check(game, (int)enemy->x, newY,
         enemy->hitboxWidth,
         enemy->hitboxHeight,
         enemy->hitboxOffsetX,
         enemy->hitboxOffsetY))
     {
-        enemy->y = newY;
+        enemy->y += enemy->knockbackY;
     }
     else
     {
@@ -692,14 +701,14 @@ static int Enemy_FindPathBFS(Game *game, Enemy *enemy, int pIndex) {
     Level *level = &game->level;
     Player *player = &game->players[pIndex];
 
-    int startX = (enemy->x + enemy->hitboxOffsetX + enemy->hitboxWidth / 2) / TILE_SIZE;
-    int startY = (enemy->y + enemy->hitboxOffsetY + enemy->hitboxHeight / 2) / TILE_SIZE; 
+    int startX = ((int)enemy->x + enemy->hitboxOffsetX + enemy->hitboxWidth / 2) / TILE_SIZE;
+    int startY = ((int)enemy->y + enemy->hitboxOffsetY + enemy->hitboxHeight / 2) / TILE_SIZE; 
 
-    int goalX = (player->x + player->hitboxOffsetX + player->hitboxWidth / 2) / TILE_SIZE;
-    int goalY = (player->y + player->hitboxOffsetY + player->hitboxHeight / 2) / TILE_SIZE;
+    int goalX = ((int)player->x + player->hitboxOffsetX + player->hitboxWidth / 2) / TILE_SIZE;
+    int goalY = ((int)player->y + player->hitboxOffsetY + player->hitboxHeight / 2) / TILE_SIZE;
 
-    goalX += (rand() % 3) - 1; // + 1,0,-1
-    goalY += (rand() % 3) - 1; // + 1,0,-1
+    //goalX += (rand() % 3) - 1; // + 1,0,-1
+    //goalY += (rand() % 3) - 1; // + 1,0,-1
 
     if (goalX < 0) goalX = 0;
     if (goalY < 0) goalY = 0;
@@ -808,40 +817,83 @@ static void Enemy_Follow_Path(Game *game, Enemy *enemy) {
 
     int targetY = targetTile.y * TILE_SIZE + TILE_SIZE / 2 - enemy->hitboxOffsetY - enemy->hitboxHeight / 2;
 
-    int newX = enemy->x;
-    int newY = enemy->y;
+    float newX = enemy->x;
+    float newY = enemy->y;
 
     if (enemy->x < targetX) {
         enemy->direction = ENEMY_RIGHT;
         enemy->state = ENEMY_RUN;
-        newX += enemy->speed;
+        newX += enemy->speed * game->deltaTime;
         if (newX > targetX) newX = targetX;
     } else if (enemy->x > targetX) {
         enemy->direction = ENEMY_LEFT;
         enemy->state = ENEMY_RUN;
-        newX -= enemy->speed;
+        newX -= enemy->speed * game->deltaTime;
         if (newX < targetX) newX = targetX;
     } else if (enemy->y < targetY) {
         enemy->direction = ENEMY_DOWN;
         enemy->state = ENEMY_RUN;
-        newY += enemy->speed;
+        newY += enemy->speed * game->deltaTime;
         if (newY > targetY) newY = targetY;
     } else if (enemy->y > targetY) {
         enemy->direction = ENEMY_UP;
         enemy->state = ENEMY_RUN;
-        newY -= enemy->speed;
+        newY -= enemy->speed * game->deltaTime;
         if (newY < targetY) newY = targetY;
     }
     
+    int xCollision = 0;
+    int yCollision = 0;
+
+    /*
+    * Check proposed X movement against every living player.
+    */
     for (int i = 0; i < game->numPlayers; i++) {
         Player *player = &game->players[i];
-        if (player->dead) continue;
-        if (!Enemy_Player_Collision(enemy, player, newX, enemy->y)) {
-            enemy->x = newX;
+
+        if (player->dead || player->remove) {
+            continue;
         }
-        if (!Enemy_Player_Collision(enemy, player, enemy->x, newY)) {
-            enemy->y = newY;
+
+        if (Enemy_Player_Collision(
+                enemy,
+                player,
+                (int)newX,
+                (int)enemy->y)) {
+
+            xCollision = 1;
+            break;
         }
+    }
+
+    if (!xCollision) {
+        enemy->x = newX;
+    }
+
+    /*
+    * Check proposed Y movement against every living player.
+    * Use the enemy's final X position after the X check.
+    */
+    for (int i = 0; i < game->numPlayers; i++) {
+        Player *player = &game->players[i];
+
+        if (player->dead || player->remove) {
+            continue;
+        }
+
+        if (Enemy_Player_Collision(
+                enemy,
+                player,
+                (int)enemy->x,
+                (int)newY)) {
+
+            yCollision = 1;
+            break;
+        }
+    }
+
+    if (!yCollision) {
+        enemy->y = newY;
     }
 
     if (enemy->x == targetX && enemy->y == targetY) {
@@ -854,8 +906,8 @@ static int Enemy_Player_Collision(Enemy *enemy, Player *player, int enemyX, int 
     enemyX += enemy->hitboxOffsetX;
     enemyY += enemy->hitboxOffsetY;
 
-    int playerX = player->x + player->hitboxOffsetX;
-    int playerY = player->y + player->hitboxOffsetY;
+    int playerX = (int)player->x + player->hitboxOffsetX;
+    int playerY = (int)player->y + player->hitboxOffsetY;
 
     return RectsOverlap(playerX, playerY, player->hitboxWidth, player->hitboxHeight,
                         enemyX, enemyY, enemy->hitboxWidth, enemy->hitboxHeight);

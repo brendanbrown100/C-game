@@ -16,10 +16,12 @@ void Cannon_Init(Game *game) {
     for (int i = 0; i < game->cannonCount; i++) {
         Cannon *cannon = &game->cannons[i];
 
-        cannon->attackDelay = CANNON_ATTACK_DELAY;
+        cannon->delayStartTime = game->time;
+        cannon->attackDelay = (cannon->attackDelay) ? cannon->attackDelay : CANNON_ATTACK_DELAY;
         cannon->remove = 0;
         cannon->bulletCount = 0;
-
+        cannon->bulletSpeed = (cannon->bulletSpeed) ? cannon->bulletSpeed : BULLET_SPEED;
+        cannon->damage = (cannon->damage) ? cannon->damage : BULLET_DAMAGE;
         for (int i = 0; i < MAX_BULLETS; i++) {
             cannon->bullets[i].remove = 1;
         }
@@ -32,10 +34,10 @@ void Cannon_Update(Game *game) {
         
         if (cannon->remove) continue;
 
-        cannon->attackDelay--;
-        if (cannon->attackDelay <= 0) {
+        float time = game->time - cannon->delayStartTime;
+        if (cannon->attackDelay <= time) {
+            cannon->delayStartTime += cannon->attackDelay;
             Cannon_Shoot(cannon);
-            cannon->attackDelay = CANNON_ATTACK_DELAY;
         }
 
         Bullet_Update(game, cannon);
@@ -48,19 +50,19 @@ static void Bullet_Update(Game *game, Cannon *cannon) {
 
         if (bullet->remove) continue;
 
-        int newX = bullet->x;
-        int newY = bullet->y;
+        float newX = bullet->x;
+        float newY = bullet->y;
         if (bullet->direction == DIR_DOWN) {
-            newY += BULLET_SPEED;
+            newY += cannon->bulletSpeed * game->deltaTime;
         } else if (bullet->direction == DIR_UP) {
-            newY -= BULLET_SPEED;
+            newY -= cannon->bulletSpeed * game->deltaTime;
         } else if (bullet->direction == DIR_LEFT) {
-            newX -= BULLET_SPEED;
+            newX -= cannon->bulletSpeed * game->deltaTime;
         } else if (bullet->direction == DIR_RIGHT) {
-            newX += BULLET_SPEED;
+            newX += cannon->bulletSpeed * game->deltaTime;
         }
 
-        if (!Collision_Check(game, newX, newY, BULLET_FRAME_WIDTH, BULLET_FRAME_HEIGHT, 0, 0)) {
+        if (!Collision_Check(game, (int)newX, (int)newY, BULLET_FRAME_WIDTH, BULLET_FRAME_HEIGHT, 0, 0)) {
             bullet->x = newX;
             bullet->y = newY;
         } else {
@@ -71,7 +73,7 @@ static void Bullet_Update(Game *game, Cannon *cannon) {
         if (pIndex >= 0) {
             Player *player = &game->players[pIndex];
 
-            int health = player->health - bullet->damage;
+            int health = player->health - cannon->damage;
             player->health = health > 0 ? health : 0;
             if (health > 0) player->beenHit = 1;
             else {
@@ -123,8 +125,8 @@ void Cannon_Render(Game *game, HDC hdc, HDC bufferDC) {
 
             if (bullet->remove) continue;
 
-            int bulletX = bullet->x - game->camera.x;
-            int bulletY = bullet->y - game->camera.y;
+            int bulletX = (int)bullet->x - game->camera.x;
+            int bulletY = (int)bullet->y - game->camera.y;
 
             if (bulletX < -BULLET_FRAME_WIDTH || bulletX > game->camera.width + BULLET_FRAME_WIDTH || bulletY < -BULLET_FRAME_HEIGHT || bulletY > game->camera.height + BULLET_FRAME_HEIGHT) continue;
 
@@ -192,7 +194,6 @@ static void Cannon_Shoot(Cannon *cannon) {
     }
 
     bullet->direction = cannon->direction;
-    bullet->damage = BULLET_DAMAGE;
     bullet->remove = 0;
 
 }
@@ -201,14 +202,15 @@ static void Cannon_Shoot(Cannon *cannon) {
 static int Bullet_Player_Collision(Game *game, Bullet *bullet) {
     for (int i = 0; i < game->numPlayers; i++) {
         Player *player = &game->players[i];
+        if (player->dead) continue;
 
-        int playerX = player->x;
-        int playerY = player->y;
+        int playerX = (int)player->x;
+        int playerY = (int)player->y;
 
         playerX += player->hitboxOffsetX;
         playerY += player->hitboxOffsetY;
 
-        if (RectsOverlap(playerX, playerY, player->hitboxWidth, player->hitboxHeight, bullet->x, bullet->y, BULLET_FRAME_WIDTH, BULLET_FRAME_HEIGHT)) {
+        if (RectsOverlap(playerX, playerY, player->hitboxWidth, player->hitboxHeight, (int)bullet->x, (int)bullet->y, BULLET_FRAME_WIDTH, BULLET_FRAME_HEIGHT)) {
             return i;
         }
     }
