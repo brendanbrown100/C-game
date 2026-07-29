@@ -59,15 +59,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         Handler_Render(handler, window.hwnd);
         
 
-        finish = clock();
-        duration = (double)(finish - start) / CLOCKS_PER_SEC;
-        if (duration < TIME_PER_FRAME) {
-            waitTime = TIME_PER_FRAME - duration;
-            do_sleep((clock_t)(waitTime * CLOCKS_PER_SEC));
-        }
-        else {
-            printf("ERROR: GAME UPDATE TOO LONG FOR %d FPS - %.3f > %.3f\n", FPS, duration, TIME_PER_FRAME);
-        }
+        // finish = clock();
+        // duration = (double)(finish - start) / CLOCKS_PER_SEC;
+        // if (duration < TIME_PER_FRAME) {
+        //     waitTime = TIME_PER_FRAME - duration;
+        //     do_sleep((clock_t)(waitTime * CLOCKS_PER_SEC));
+        // }
+        // else {
+        //     printf("ERROR: GAME UPDATE TOO LONG FOR %d FPS - %.3f > %.3f\n", FPS, duration, TIME_PER_FRAME);
+        // }
 
         final = clock();
         duration = (double)(final - start) / CLOCKS_PER_SEC;

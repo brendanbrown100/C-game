@@ -17,7 +17,7 @@ void Settings_Init(Settings *settings) {
         option->y = SETTINGS_OPTION_START_Y + (SETTINGS_OPTION_INCREMENT_Y * i);
         option->selected = 0;
         option->changingKeyState = 0;
-        option->remapDelay = 30;
+        option->remapDelay = OPTION_REMAP_DELAY;
     }
     settings->options[0].selected = 1;
     Load_Image(&settings->options[PLAYER_OPTION].optionImg, CURR_PLAYER_IMG_PATH);
@@ -67,7 +67,7 @@ void Settings_Update(GameHandler *handler) {
          * because doing so can consume controller press events.
          */
         if (option->remapDelay > 0) {
-            option->remapDelay--;
+            option->remapDelay -= handler->game.deltaTime;
             return;
         }
 
@@ -144,7 +144,7 @@ void Settings_Update(GameHandler *handler) {
 
 
             option->changingKeyState = 0;
-            option->remapDelay = 0;
+            option->remapDelay = 0.0f;
 
             Save_Key_Codes(game);
 
@@ -291,7 +291,7 @@ void Settings_Update(GameHandler *handler) {
         }
         
         option->changingKeyState = 1;
-        option->remapDelay = 30;
+        option->remapDelay = OPTION_REMAP_DELAY;
 
         settings->upWasDown = upIsDown;
         settings->downWasDown = downIsDown;

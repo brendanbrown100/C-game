@@ -30,6 +30,8 @@
 #define SETTINGS_OPTION_HEIGHT       25
 #define KEY_CODE_VAL_X               275
 
+#define OPTION_REMAP_DELAY 0.5f
+
 #define TOTAL_SETTINGS_OPTIONS  14
 
 
@@ -54,12 +56,13 @@ typedef struct SettingsOption {
     HBITMAP optionImg;
     SettingsOptionType type;
 
+    float remapDelay;
+
     int x;
     int y;
     int selected;
     int changingKeyState;
     int waitingForRelease;
-    int remapDelay;
 } SettingsOption;
 
 typedef struct Settings {
