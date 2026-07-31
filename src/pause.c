@@ -84,7 +84,7 @@ void Pause_Update(GameHandler *handler) {
                 handler->currState = SETTINGS_STATE;
                 break;
             case PAUSE_OPTION_COUNT:
-                printf("This should not happen");
+                printf("ERROR: This should not happen - PAUSE_OPTION_COUNT selected");
                 break;
 
         }

@@ -162,6 +162,9 @@
 
 #define CAMERA_DAMPING 0.5f
 
+#define TIME_X 744
+#define TIME_Y 30
+
 
 #define LEVEL_1_PATH "Assets/Levels/level1.txt"
 #define LEVEL_2_PATH "Assets/Levels/level2.txt"
@@ -253,6 +256,9 @@ typedef struct Level {
 } Level;
 
 typedef struct Camera {
+    float exactX;
+    float exactY;
+
     int x;
     int y;
     int width;

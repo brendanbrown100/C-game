@@ -47,8 +47,8 @@ typedef enum SettingsOptionType {
     INTERACT_KEY_OPTION,
     SELECT_KEY_OPTION,
     PAUSE_KEY_OPTION,
-    NUM_PLAYERS_OPTION,
     DAMPING_OPTION,
+    NUM_PLAYERS_OPTION,
     BACK_OPTION,
 } SettingsOptionType;
 
@@ -61,6 +61,7 @@ typedef struct SettingsOption {
     int x;
     int y;
     int selected;
+    int show;
     int changingKeyState;
     int waitingForRelease;
 } SettingsOption;

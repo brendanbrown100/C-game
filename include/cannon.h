@@ -44,7 +44,7 @@ typedef struct Bullet {
 typedef struct Cannon {
     Bullet bullets[MAX_BULLETS];
 
-    float delayStartTime;
+    float delayTime;
     float attackDelay;
 
     int x;

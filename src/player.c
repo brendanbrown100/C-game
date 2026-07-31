@@ -32,8 +32,6 @@ void Player_Init(Game *game, Level *level, int pIndex) {
     player->hitboxOffsetY = (FRAME_HEIGHT - PLAYER_HEIGHT) / 2;
     player->spriteWidth = FRAME_WIDTH;
     player->spriteHeight = FRAME_HEIGHT;
-    if (!player->health) player->health = MAX_HEALTH;
-    if (player->dead) player->health = 20;
     player->sprinting = 0;
     player->moving = 0;
     player->direction = DIR_DOWN;
@@ -236,6 +234,8 @@ void Player_Update(GameHandler *handler, int pIndex) {
         handler->pauseMenu.player = pIndex;
         return;
     }
+
+    if (player->remove) return;
 
 
     int moving = 0;
@@ -467,7 +467,6 @@ void Player_Update(GameHandler *handler, int pIndex) {
     if (fallCheck == 1) {
         player->health = 0;
         player->dead = 1;
-        Check_Game_Over(game);
     } else if (fallCheck == 2) {
         Spawn_Jet(game, pIndex);
     }
@@ -495,13 +494,7 @@ void Player_Render(Game *game, int pIndex, HDC hdc, HDC bufferDC) {
     Player *player = &game->players[pIndex];
     Animation *healthBar = &player->healthBar;
 
-    int healthFrame = (MAX_HEALTH - player->health) * player->healthBar.frameCount[0] / MAX_HEALTH;
-
-    if (healthFrame < 0) healthFrame = 0;
-    if (healthFrame >= player->healthBar.frameCount[0])
-        healthFrame = player->healthBar.frameCount[0] - 1;
-
-    int healthSrcX = healthFrame * HEALTH_BAR_WIDTH;
+    int healthSrcX = player->healthBar.currentFrame * HEALTH_BAR_WIDTH;
     int healthSrcY = 0;
 
     HDC healthDC = CreateCompatibleDC(hdc);
@@ -625,63 +618,64 @@ static void Player_Start_Dash(Player *player) {
 static void Player_Update_Dash(Game *game, int pIndex) {
     Player *player = &game->players[pIndex];
 
-    int stepNum = PLAYER_DASH_SPEED * game->deltaTime;
-    for (int step = 0; step < stepNum; step++) {
-        float newX = player->x;
-        float newY = player->y;
+    float newX = player->x;
+    float newY = player->y;
 
-        switch (player->dashDirection) {
-            case DIR_LEFT:
-                newX--;
-                break;
-
-            case DIR_RIGHT:
-                newX++;
-                break;
-
-            case DIR_UP:
-                newY--;
-                break;
-
-            case DIR_DOWN:
-                newY++;
-                break;
-        }
-
-        /*
-         * Walls still block the dash.
-         */
-        if (Collision_Check(
-                game,
-                (int)newX,
-                (int)newY,
-                player->hitboxWidth,
-                player->hitboxHeight,
-                player->hitboxOffsetX,
-                player->hitboxOffsetY)) {
-
-            player->dashTimer = 0.0f;
+    switch (player->dashDirection) {
+        case DIR_LEFT:
+            newX -= PLAYER_DASH_SPEED * game->deltaTime;;
             break;
-        }
 
-        /*
-         * Move through the enemy regardless.
-         */
-        player->x = newX;
-        player->y = newY;
+        case DIR_RIGHT:
+            newX += PLAYER_DASH_SPEED * game->deltaTime;;
+            break;
 
-        /*
-         * Remember this position only when it is not inside an enemy.
-         *
-         * We are checking enemy collision here, but we are not using
-         * it to stop the dash.
-         */
-        if (!Check_Enemy_Collision(game, (int)player->x, (int)player->y, pIndex) && 
-            !Check_Player_OffScreen(game, (int)player->x, (int)player->y, pIndex)) {
+        case DIR_UP:
+            newY -= PLAYER_DASH_SPEED * game->deltaTime;;
+            break;
 
-            player->dashSafeX = player->x;
-            player->dashSafeY = player->y;
-        }
+        case DIR_DOWN:
+            newY += PLAYER_DASH_SPEED * game->deltaTime;;
+            break;
+    }
+
+    /*
+        * Walls still block the dash.
+        */
+    if (Collision_Check(
+            game,
+            (int)newX,
+            (int)newY,
+            player->hitboxWidth,
+            player->hitboxHeight,
+            player->hitboxOffsetX,
+            player->hitboxOffsetY)) {
+
+        player->dashing = 0;
+        player->state = PLAYER_IDLE;
+
+        player->dash.currentFrame = 0;
+        player->dash.frameTimer = 0.0f;
+        return;
+    }
+
+    /*
+        * Move through the enemy regardless.
+        */
+    player->x = newX;
+    player->y = newY;
+
+    /*
+        * Remember this position only when it is not inside an enemy.
+        *
+        * We are checking enemy collision here, but we are not using
+        * it to stop the dash.
+        */
+    if (!Check_Enemy_Collision(game, (int)player->x, (int)player->y, pIndex) && 
+        !Check_Player_OffScreen(game, (int)player->x, (int)player->y, pIndex)) {
+
+        player->dashSafeX = player->x;
+        player->dashSafeY = player->y;
     }
 
     if (player->dashTimer > 0.0f) {
@@ -981,13 +975,13 @@ static Animation *Player_GetCurrentAnimation(Player *player) {
 }
 
 static void HealthBar_Update(Player *player) {
-    if (player->health <= 20) {
+    if (player->health < 20) {
         player->healthBar.currentFrame = 5;
-    } else if (player->health <= 40) {
+    } else if (player->health < 40) {
         player->healthBar.currentFrame = 4;
-    } else if (player->health <= 60) {
+    } else if (player->health < 60) {
         player->healthBar.currentFrame = 3;
-    } else if (player->health <= 80) {
+    } else if (player->health < 80) {
         player->healthBar.currentFrame = 2;
     } else if (player->health < MAX_HEALTH) {
         player->healthBar.currentFrame = 1;

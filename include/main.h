@@ -7,9 +7,9 @@
 
 #define WIDTH  810
 #define HEIGHT 610
-#define FPS    50
-#define TIME_PER_FRAME 0.02
-#define FPS_X  750
+#define FPS    75
+#define TIME_PER_FRAME 0.015f
+#define FPS_X  744
 #define FPS_Y  10
 #define GAME_TITLE "Super Shitty World"
 

@@ -18,6 +18,7 @@ void Settings_Init(Settings *settings) {
         option->selected = 0;
         option->changingKeyState = 0;
         option->remapDelay = OPTION_REMAP_DELAY;
+        option->show = 1;
     }
     settings->options[0].selected = 1;
     Load_Image(&settings->options[PLAYER_OPTION].optionImg, CURR_PLAYER_IMG_PATH);
@@ -48,7 +49,8 @@ void Settings_Init(Settings *settings) {
 void Settings_Update(GameHandler *handler) {
     Settings *settings = &handler->settingsMenu;
     Game *game = &handler->game;
-
+    
+    settings->options[NUM_PLAYERS_OPTION].show = (settings->playing) ? 0 : 1;
     /*
      * Check whether an option is currently waiting for a new input.
      */
@@ -76,7 +78,7 @@ void Settings_Update(GameHandler *handler) {
          * your standalone input-testing program.
          */
         for (int virtualCode = 1;
-             virtualCode < 256;
+             virtualCode < 255;
              virtualCode++) {
 
             SHORT keyState = GetAsyncKeyState(virtualCode);
@@ -202,23 +204,22 @@ void Settings_Update(GameHandler *handler) {
 
     if (upPressed) {
         settings->options[settings->currSelected].selected = 0;
-        
-        settings->currSelected--;
-
-        if (settings->currSelected < 0) {
-            settings->currSelected = TOTAL_SETTINGS_OPTIONS - 1;
-        }
-
-        settings->options[settings->currSelected].selected = 1;
+        int next = settings->currSelected;
+        do {
+            next--;
+            if (next < 0) next = TOTAL_SETTINGS_OPTIONS - 1;
+        } while (!settings->options[next].show);
+        settings->options[next].selected = 1;
+        settings->currSelected = next;
     }
     else if (downPressed) {
         settings->options[settings->currSelected].selected = 0;
-
-        settings->currSelected =
-            (settings->currSelected + 1) %
-            TOTAL_SETTINGS_OPTIONS;
-
-        settings->options[settings->currSelected].selected = 1;
+        int next = settings->currSelected;
+        do {
+            next = (next + 1) % TOTAL_SETTINGS_OPTIONS;
+        } while (!settings->options[next].show);
+        settings->options[next].selected = 1;
+        settings->currSelected = next;
     }
 
     if (selectPressed) {
@@ -251,20 +252,15 @@ void Settings_Update(GameHandler *handler) {
                 return;
             case DAMPING_OPTION:
                 if (settings->player != 0) goto skip_damping;
-                int damping = (int)(handler->game.camera.damping * 10.0f);
+                int damping = (int)(handler->game.camera.damping * 11.0f);
 
                 damping++;
 
                 if (damping > 10) {
-                    damping = 1;
+                    damping = 0;
                 }
 
-                handler->game.camera.damping = damping / 10.0f;
-
-                printf(
-                    "damping: %.1f\n",
-                    handler->game.camera.damping
-                );
+                handler->game.camera.damping = damping / 11.0f;
 
                 skip_damping:
 
@@ -274,12 +270,10 @@ void Settings_Update(GameHandler *handler) {
                 return;
             
             case PLAYER_OPTION:
-                if (settings->player != 0) goto skip_player;
                 int player = settings->player;
                 player++;
-                if (player > handler->game.numPlayers) player = 1;
+                if (player >= handler->game.numPlayers) player = 0;
                 settings->player = player;
-                skip_player:
                 settings->upWasDown = upIsDown;
                 settings->downWasDown = downIsDown;
                 settings->selectWasDown = selectIsDown;
@@ -344,6 +338,7 @@ void Settings_Render(GameHandler *handler, HWND hwnd) {
     SelectObject(settingsDC, oldImage);
     for (int i = 0; i < TOTAL_SETTINGS_OPTIONS; i++) {
         SettingsOption *option = &settings->options[i];
+        if (!option->show) continue;
 
         HBITMAP oldimage = SelectObject(settingsDC, option->optionImg);
 
@@ -368,7 +363,7 @@ void Settings_Render(GameHandler *handler, HWND hwnd) {
         SelectObject(settingsDC, oldimage);
 
         int value = Get_KeyCode(&handler->game, option->type, settings->player);
-        if (value) Number_Render(&handler->game, KEY_CODE_VAL_X, option->y, value, hdc, bufferDC);
+        if (value != -1) Number_Render(&handler->game, KEY_CODE_VAL_X, option->y, value, hdc, bufferDC);
     }
     BitBlt(
         hdc,
@@ -406,9 +401,9 @@ static int Get_KeyCode(Game *game, int type, int pIndex) {
         case (PAUSE_KEY_OPTION):    return game->playerKeyCodeData[pIndex].pauseKeyCode;
         case (NUM_PLAYERS_OPTION):  return game->numPlayers;
         case (PLAYER_OPTION):       return pIndex + 1;
-        case (DAMPING_OPTION):      return (int) (game->camera.damping * 10);
-        case (BACK_OPTION):         return 0;
-        default:                    return 0;
+        case (DAMPING_OPTION):      return (int) (game->camera.damping * 11.0f);
+        case (BACK_OPTION):         return -1;
+        default:                    return -1;
     }
 }
 

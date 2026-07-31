@@ -16,7 +16,7 @@ void Cannon_Init(Game *game) {
     for (int i = 0; i < game->cannonCount; i++) {
         Cannon *cannon = &game->cannons[i];
 
-        cannon->delayStartTime = game->time;
+        cannon->delayTime = 0;
         cannon->attackDelay = (cannon->attackDelay) ? cannon->attackDelay : CANNON_ATTACK_DELAY;
         cannon->remove = 0;
         cannon->bulletCount = 0;
@@ -34,9 +34,9 @@ void Cannon_Update(Game *game) {
         
         if (cannon->remove) continue;
 
-        float time = game->time - cannon->delayStartTime;
-        if (cannon->attackDelay <= time) {
-            cannon->delayStartTime += cannon->attackDelay;
+        cannon->delayTime -= game->deltaTime;
+        if (cannon->delayTime <= 0) {
+            cannon->delayTime += cannon->attackDelay;
             Cannon_Shoot(cannon);
         }
 
@@ -78,7 +78,6 @@ static void Bullet_Update(Game *game, Cannon *cannon) {
             if (health > 0) player->beenHit = 1;
             else {
                 player->dead = 1;
-                Check_Game_Over(game);
             }
 
             Camera_Shake(&game->camera, PLAYER_HIT_SHAKE_DURATION, PLAYER_HIT_SHAKE_STRENGTH);

@@ -48,7 +48,6 @@ void Carousel_Update(Game *game) {
             if (health > 0) player->beenHit = 1;
             else {
                 player->dead = 1;
-                Check_Game_Over(game);
             }
 
             Camera_Shake(&game->camera, PLAYER_HIT_SHAKE_DURATION, PLAYER_HIT_SHAKE_STRENGTH);

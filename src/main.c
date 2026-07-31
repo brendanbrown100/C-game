@@ -7,8 +7,7 @@
 static void do_sleep( clock_t wait );
 
 
-int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
-{
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
     (void)hPrevInstance;
     (void)lpCmdLine;
 
@@ -37,9 +36,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     while (1)
     {
-        clock_t start, finish, final;
+        clock_t start, final;
         double duration;
-        double waitTime;
 
         start = clock();
 
@@ -58,29 +56,27 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         Handler_Update(handler);
         Handler_Render(handler, window.hwnd);
         
-
-        // finish = clock();
-        // duration = (double)(finish - start) / CLOCKS_PER_SEC;
-        // if (duration < TIME_PER_FRAME) {
-        //     waitTime = TIME_PER_FRAME - duration;
-        //     do_sleep((clock_t)(waitTime * CLOCKS_PER_SEC));
-        // }
-        // else {
-        //     printf("ERROR: GAME UPDATE TOO LONG FOR %d FPS - %.3f > %.3f\n", FPS, duration, TIME_PER_FRAME);
-        // }
+        clock_t finish;
+        finish = clock();
+        duration = (double)(finish - start) / CLOCKS_PER_SEC;
+        if (duration < TIME_PER_FRAME) {
+            do_sleep((clock_t)((TIME_PER_FRAME - duration) * CLOCKS_PER_SEC));
+        }
+        else {
+            printf("ERROR: GAME UPDATE TOO LONG FOR %d FPS - %.3f > %.3f\n", FPS, duration, TIME_PER_FRAME);
+        }
 
         final = clock();
         duration = (double)(final - start) / CLOCKS_PER_SEC;
         handler->fps = 1.0 / duration;
         handler->game.deltaTime = duration;
-        handler->game.time += duration;
+        if (handler->currState == PLAYING) handler->game.time += duration;
     }
     free(handler);
     return (int)msg.wParam;
 }
 
-static void do_sleep( clock_t wait )
-{
+static void do_sleep( clock_t wait ) {
    clock_t goal;
    goal = wait + clock();
    while( goal > clock() )

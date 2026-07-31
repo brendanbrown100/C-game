@@ -7,6 +7,7 @@
 #include <windows.h>
 #include <stdio.h>
 #include <time.h>
+#include <math.h>
 
 static void Game_UpdateCamera(Game *game);
 static int Level_Won(Game *game);
@@ -294,6 +295,10 @@ int Game_InitLevel(Game *game, const char *levelPath) {
                         level->enemies[level->enemyCount].hitboxHeight = ENEMY_HEIGHT;
                         level->enemies[level->enemyCount].hitboxOffsetX = (ENEMY_FRAME_WIDTH - ENEMY_WIDTH) / 2;
                         level->enemies[level->enemyCount].hitboxOffsetY = (ENEMY_FRAME_HEIGHT - ENEMY_HEIGHT) / 2;
+                        level->enemies[level->enemyCount].speed = 0;
+                        level->enemies[level->enemyCount].health = 0;
+                        level->enemies[level->enemyCount].hasSpawn = 0;
+                        level->enemies[level->enemyCount].damage = 0;
                         level->enemyCount++;
                     } else {
                         printf("FAILED TO INITILIZE ENEMY: TOO MANY ENEMIES\n");
@@ -308,6 +313,10 @@ int Game_InitLevel(Game *game, const char *levelPath) {
                         level->enemies[level->enemyCount].hitboxHeight = ARCHER_HEIGHT;
                         level->enemies[level->enemyCount].hitboxOffsetX = (ENEMY_FRAME_WIDTH - ARCHER_WIDTH) / 2;
                         level->enemies[level->enemyCount].hitboxOffsetY = (ENEMY_FRAME_HEIGHT - ARCHER_HEIGHT) / 2;
+                        level->enemies[level->enemyCount].speed = 0;
+                        level->enemies[level->enemyCount].health = 0;
+                        level->enemies[level->enemyCount].hasSpawn = 0;
+                        level->enemies[level->enemyCount].damage = 0;
                         level->enemyCount++;
                     } else {
                         printf("FAILED TO INITILIZE ENEMY: TOO MANY ENEMIES\n");
@@ -322,6 +331,8 @@ int Game_InitLevel(Game *game, const char *levelPath) {
                         game->carousels[game->carouselCount].x = col * TILE_SIZE - (CAROUSEL_FRAME_WIDTH / 2) + (TILE_SIZE / 2);
                         game->carousels[game->carouselCount].y = row * TILE_SIZE - (CAROUSEL_FRAME_HEIGHT / 2) + (TILE_SIZE / 2);
                         game->carousels[game->carouselCount].clockWise = 0;
+                        game->carousels[game->carouselCount].damage = 0;
+                        game->carousels[game->carouselCount].frameDelay = 0;
                         game->carouselCount++;
                     } else {
                         printf("FAILED TO INITILIZE CAROUSEL: TOO MANY CAROUSELS\n");
@@ -332,6 +343,8 @@ int Game_InitLevel(Game *game, const char *levelPath) {
                         game->carousels[game->carouselCount].x = col * TILE_SIZE - (CAROUSEL_FRAME_WIDTH / 2) + (TILE_SIZE / 2);
                         game->carousels[game->carouselCount].y = row * TILE_SIZE - (CAROUSEL_FRAME_HEIGHT / 2) + (TILE_SIZE / 2);
                         game->carousels[game->carouselCount].clockWise = 1;
+                        game->carousels[game->carouselCount].damage = 0;
+                        game->carousels[game->carouselCount].frameDelay = 0;
                         game->carouselCount++;
                     } else {
                         printf("FAILED TO INITILIZE CAROUSEL: TOO MANY CAROUSELS\n");
@@ -342,6 +355,9 @@ int Game_InitLevel(Game *game, const char *levelPath) {
                         game->cannons[game->cannonCount].x = col * TILE_SIZE;
                         game->cannons[game->cannonCount].y = row * TILE_SIZE;
                         game->cannons[game->cannonCount].direction = DIR_UP;
+                        game->cannons[game->cannonCount].attackDelay = 0;
+                        game->cannons[game->cannonCount].bulletSpeed = 0;
+                        game->cannons[game->cannonCount].damage = 0;
                         game->cannonCount++;
                     } else {
                         printf("FAILED TO INITILIZE CANNON: TOO MANY CANNONS\n");
@@ -352,6 +368,9 @@ int Game_InitLevel(Game *game, const char *levelPath) {
                         game->cannons[game->cannonCount].x = col * TILE_SIZE;
                         game->cannons[game->cannonCount].y = row * TILE_SIZE;
                         game->cannons[game->cannonCount].direction = DIR_DOWN;
+                        game->cannons[game->cannonCount].attackDelay = 0;
+                        game->cannons[game->cannonCount].bulletSpeed = 0;
+                        game->cannons[game->cannonCount].damage = 0;
                         game->cannonCount++;
                     } else {
                         printf("FAILED TO INITILIZE CANNON: TOO MANY CANNONS\n");
@@ -362,6 +381,9 @@ int Game_InitLevel(Game *game, const char *levelPath) {
                         game->cannons[game->cannonCount].x = col * TILE_SIZE;
                         game->cannons[game->cannonCount].y = row * TILE_SIZE;
                         game->cannons[game->cannonCount].direction = DIR_LEFT;
+                        game->cannons[game->cannonCount].attackDelay = 0;
+                        game->cannons[game->cannonCount].bulletSpeed = 0;
+                        game->cannons[game->cannonCount].damage = 0;
                         game->cannonCount++;
                     } else {
                         printf("FAILED TO INITILIZE CANNON: TOO MANY CANNONS\n");
@@ -372,6 +394,9 @@ int Game_InitLevel(Game *game, const char *levelPath) {
                         game->cannons[game->cannonCount].x = col * TILE_SIZE;
                         game->cannons[game->cannonCount].y = row * TILE_SIZE;
                         game->cannons[game->cannonCount].direction = DIR_RIGHT;
+                        game->cannons[game->cannonCount].attackDelay = 0;
+                        game->cannons[game->cannonCount].bulletSpeed = 0;
+                        game->cannons[game->cannonCount].damage = 0;
                         game->cannonCount++;
                     } else {
                         printf("FAILED TO INITILIZE CANNON: TOO MANY CANNONS\n");
@@ -510,7 +535,7 @@ int Save_Game_Data(Game *game) {
 
     GameData data = {0};
 
-    for (int i = 0; i < game->numPlayers; i++) {
+    for (int i = 0; i < MAX_PLAYERS; i++) {
         PlayerData *playerData = &data.playerData[i];
         playerData->health = game->players[i].health;
     }
@@ -622,7 +647,7 @@ static int Load_Key_Codes(Game *game) {
         p3->attackKeyCode = 0; 
         p3->interactKeyCode = 0; 
         p3->selectKeyCode = 0; 
-        p3->pauseKeyCode = 51; 
+        p3->pauseKeyCode = 0; 
 
         p4->upKeyCode = 0;
         p4->downKeyCode = 0;
@@ -633,7 +658,7 @@ static int Load_Key_Codes(Game *game) {
         p4->attackKeyCode = 0; 
         p4->interactKeyCode = 0; 
         p4->selectKeyCode = 0; 
-        p4->pauseKeyCode = 52; 
+        p4->pauseKeyCode = 0; 
         return 0;
     }
 
@@ -801,6 +826,7 @@ int Load_Game_Data(Game *game) {
     }
 
     game->currentLevel = state.level;
+    game->numPlayers = state.numPlayers;
     game->score = state.score;
     game->gameOver = 0;
     game->gameWin = 0;
@@ -815,7 +841,7 @@ int Load_Game_Data(Game *game) {
     }
 
     for (int i = 0; i < MAX_PLAYERS; i++) {
-        game->players[i].health = state.playerData[i].health;
+        game->players[i].health = state.playerData[i].health;     
     }
     return 1;
 }
@@ -897,9 +923,12 @@ int Spawn_Init(Game *game, int x, int y, SpawnType type) {
 
 
 void Game_Update(GameHandler *handler) {
+    int numAlive = 0;
     for (int i = 0; i < handler->game.numPlayers; i++) {
+        if (handler->game.players[i].remove) numAlive++;
         Player_Update(handler, i);
     }
+    handler->game.gameOver = numAlive == handler->game.numPlayers;
     Barrel_Update(&handler->game);
     Enemy_Update(&handler->game);
     Carousel_Update(&handler->game);
@@ -1033,7 +1062,7 @@ void Game_Render(GameHandler *handler, HWND hwnd) {
 
     Number_Render(game, SCORE_START_X, SCORE_START_Y, game->score, hdc, bufferDC);
     Number_Render(game, FPS_X, FPS_Y, (int)handler->fps, hdc, bufferDC);
-    Number_Render(game, 750, 30, (int)game->time, hdc, bufferDC);
+    Number_Render(game, TIME_X, TIME_Y, (int)game->time, hdc, bufferDC);
 
     BitBlt(hdc, 0, 0, game->camera.width, game->camera.height, bufferDC, 0, 0, SRCCOPY);
     SelectObject(bufferDC, oldBitmap);
@@ -1043,13 +1072,6 @@ void Game_Render(GameHandler *handler, HWND hwnd) {
     
 }
 
-void Check_Game_Over(Game *game) {
-    int num = 0;
-    for (int i = 0; i < game->numPlayers; i++) {
-        if (game->players[i].dead) num++;
-    }
-    game->gameOver = game->numPlayers == num;
-}
 
 static void Barrel_Update(Game *game) {
     Level *level = &game->level;
@@ -1084,8 +1106,8 @@ static void Barrel_Update(Game *game) {
             continue;
         }
 
-        int newX = barrel->x;
-        int newY = barrel->y;
+        float newX = barrel->x;
+        float newY = barrel->y;
 
         switch (barrel->dir) {
             case DIR_DOWN:
@@ -1124,8 +1146,8 @@ static void Barrel_Update(Game *game) {
 
         if (Collision_Check(
                 game,
-                newX,
-                newY,
+                (int)newX,
+                (int)newY,
                 hitboxWidth,
                 hitboxHeight,
                 hitboxOffsetX,
@@ -1150,10 +1172,10 @@ static void Barrel_Update(Game *game) {
         barrel->y = newY;
 
         RECT barrelBox = {
-            barrel->x + hitboxOffsetX,
-            barrel->y + hitboxOffsetY,
-            barrel->x + hitboxOffsetX + hitboxWidth,
-            barrel->y + hitboxOffsetY + hitboxHeight
+            (int)barrel->x + hitboxOffsetX,
+            (int)barrel->y + hitboxOffsetY,
+            (int)barrel->x + hitboxOffsetX + hitboxWidth,
+            (int)barrel->y + hitboxOffsetY + hitboxHeight
         };
 
         for (int j = 0; j < level->enemyCount; j++) {
@@ -1166,10 +1188,10 @@ static void Barrel_Update(Game *game) {
             }
 
             RECT enemyBox = {
-                enemy->x + enemy->hitboxOffsetX,
-                enemy->y + enemy->hitboxOffsetY,
-                enemy->x + enemy->hitboxOffsetX + enemy->hitboxWidth,
-                enemy->y + enemy->hitboxOffsetY + enemy->hitboxHeight
+                (int)enemy->x + enemy->hitboxOffsetX,
+                (int)enemy->y + enemy->hitboxOffsetY,
+                (int)enemy->x + enemy->hitboxOffsetX + enemy->hitboxWidth,
+                (int)enemy->y + enemy->hitboxOffsetY + enemy->hitboxHeight
             };
 
             if (Rect_Overlap(barrelBox, enemyBox)) {
@@ -1192,7 +1214,7 @@ static void Barrel_Update(Game *game) {
                 enemy->hurt.currentFrame = 0;
                 enemy->hurt.frameTimer = 0.0f;
 
-                Enemy_Start_Knockback(enemy, barrel->x, barrel->y);
+                Enemy_Start_Knockback(enemy, (int)barrel->x, (int)barrel->y);
 
                 int health = enemy->health - game->level.playerDamage * 2;
 
@@ -1385,6 +1407,11 @@ static void Barrel_Render(Game *game, HDC hdc, HDC bufferDC) {
 }
 
 void Game_Next_Level(Game *game) {
+    for (int i = 0; i < game->numPlayers; i++) {
+        Player *player = &game->players[i];
+        if (!player->health) player->health = 20;
+    }
+
     int next = game->currentLevel + 1;
     if (next >= game->levelCount) {
         game->gameWin = 1;
@@ -1515,7 +1542,6 @@ static void Jet_Update(Game *game) {
                     if (player->health <= 0) {
                         player->health = 0;
                         player->dead = 1;
-                        Check_Game_Over(game);
                     } else {
                         player->beenHit = 1;
                     }
@@ -1691,19 +1717,25 @@ static void Game_UpdateCamera(Game *game)
         camY += (int)player->y + player->spriteHeight / 2 - game->camera.height / 2;
     }
     if (numPlayerAlive == 0) return;
-    game->camera.x += ((camX / numPlayerAlive) - game->camera.x) * game->camera.damping;
-    game->camera.y += ((camY / numPlayerAlive) - game->camera.y) * game->camera.damping;
 
-    if (game->camera.x < 0) game->camera.x = 0;
-    if (game->camera.y < 0) game->camera.y = 0;
+    float alpha = 1.0f - powf(game->camera.damping, game->deltaTime * 30.0f);
+    
+    game->camera.exactX += ((camX / numPlayerAlive) - game->camera.x) * alpha;
+    game->camera.exactY += ((camY / numPlayerAlive) - game->camera.y) * alpha;
+
+    if (game->camera.exactX < 0) game->camera.exactX = 0;
+    if (game->camera.exactY < 0) game->camera.exactY = 0;
 
     if (levelWidth > game->camera.width &&
-        game->camera.x + game->camera.width > levelWidth)
-        game->camera.x = levelWidth - game->camera.width;
+        game->camera.exactX + game->camera.width > levelWidth)
+        game->camera.exactX = levelWidth - game->camera.width;
 
     if (levelHeight > game->camera.height &&
-        game->camera.y + game->camera.height > levelHeight)
-        game->camera.y = levelHeight - game->camera.height;
+        game->camera.exactY + game->camera.height > levelHeight)
+        game->camera.exactY = levelHeight - game->camera.height;
+    
+    game->camera.x = (int)game->camera.exactX;
+    game->camera.y = (int)game->camera.exactY;
 
     Camera_UpdateShake(&game->camera);
 }
