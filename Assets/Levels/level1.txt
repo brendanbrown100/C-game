@@ -29,6 +29,6 @@ width:105 height:30 enemyCoolDown:0.5 playerDamage:100 enemySpawnProb:0 enemySpe
 #########################################################################################################
 #########################################################################################################
 #########################################################################################################
-name:cannon idx:0 damage:40 bulletSpeed:150 attackSpeed:0.5
+name:cannon idx:0 damage:20 bulletSpeed:150 attackSpeed:0.5
 name:carousel idx:0 damage:40 frameDelay:0.1
 name:enemy idx:0 health:200 damage:40 speed:150 hasSpawn:1

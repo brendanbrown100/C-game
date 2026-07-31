@@ -71,17 +71,8 @@ static void Bullet_Update(Game *game, Cannon *cannon) {
 
         int pIndex = Bullet_Player_Collision(game, bullet);
         if (pIndex >= 0) {
-            Player *player = &game->players[pIndex];
-
-            int health = player->health - cannon->damage;
-            player->health = health > 0 ? health : 0;
-            if (health > 0) player->beenHit = 1;
-            else {
-                player->dead = 1;
-            }
-
-            Camera_Shake(&game->camera, PLAYER_HIT_SHAKE_DURATION, PLAYER_HIT_SHAKE_STRENGTH);
-            bullet->remove = 1;
+            Player_Hit(game, pIndex, cannon->damage);
+            if (!game->players[pIndex].invincible) bullet->remove = 1;
         }
     } 
 }

@@ -42,15 +42,7 @@ void Carousel_Update(Game *game) {
         if (pIndex >= 0) {
             Player *player = &game->players[pIndex];
             if (player->beenHit) return;
-
-            int health = player->health - carousel->damage;
-            player->health = health > 0 ? health : 0;
-            if (health > 0) player->beenHit = 1;
-            else {
-                player->dead = 1;
-            }
-
-            Camera_Shake(&game->camera, PLAYER_HIT_SHAKE_DURATION, PLAYER_HIT_SHAKE_STRENGTH);
+            Player_Hit(game, pIndex, carousel->damage);
         }
     }
 }

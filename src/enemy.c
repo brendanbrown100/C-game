@@ -427,15 +427,7 @@ static void Arrow_Update(Game *game) {
 
         int pIndex = Arrow_Player_Collision(game, arrow);
         if (pIndex >= 0) {
-            Player *player = &game->players[pIndex];
-            int health = player->health - arrow->damage;
-            player->health = health > 0 ? health : 0;
-            if (health > 0) player->beenHit = 1;
-            else {
-                player->dead = 1;
-            }
-
-            Camera_Shake(&game->camera, PLAYER_HIT_SHAKE_DURATION, PLAYER_HIT_SHAKE_STRENGTH);
+            Player_Hit(game, pIndex, arrow->damage);
             arrow->remove = 1;
         }
     }
@@ -612,16 +604,7 @@ static void Check_Enemy_Attack(Game *game, Enemy *enemy) {
         };
 
         if (!Rect_Overlap(attackBox, playerBox)) continue;
-        int health = player->health - enemy->damage;
-        player->health = health > 0 ? health : 0;
-        if (health > 0) {
-            player->beenHit = 1;
-        }
-        else {
-            player->dead = 1;
-        }
-        
-        Camera_Shake(&game->camera, PLAYER_HIT_SHAKE_DURATION, PLAYER_HIT_SHAKE_STRENGTH);
+        Player_Hit(game, i, enemy->damage);
         enemy->attackHit = 1;
     }
 }
@@ -652,6 +635,7 @@ void Enemy_Apply_Knockback(Game *game, Enemy *enemy)
     int yCollision = 0;
     for (int i = 0; i < game->numPlayers; i++) {
         Player *player = &game->players[i];
+        if (player->dead) continue;
         if (Enemy_Player_Collision(
             enemy,
             player,

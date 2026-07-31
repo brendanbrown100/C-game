@@ -86,8 +86,13 @@
 #define IDLE_ATTACK_FRAME_DELAY 0.09f
 #define RUN_ATTACK_FRAME_DELAY 0.09f
 #define WALK_ATTACK_FRAME_DELAY 0.125f
-#define HURT_FRAME_DELAY 0.156f
+#define HURT_FRAME_DELAY 0.09f
 #define DEATH_FRAME_DELAY 0.31f
+
+#define INVINCIBLE_HIT_TIMER 0.5f
+
+#define INVINCIBLE_ON_SCREEN_TIME 0.1f
+#define INVINCIBLE_OFF_SCREEN_TIME 0.05f
 
 #define PLAYER_START_ATTACK_FRAME 3
 #define PLAYER_END_ATTACK_FRAME 6
@@ -140,6 +145,9 @@ typedef struct Player {
     float dashTimer;
     float dashCooldown;
 
+    float invincibleTimer;
+    float invincibleScreenTime;
+
     float dashSafeX;
     float dashSafeY;
 
@@ -158,6 +166,8 @@ typedef struct Player {
     int spriteHeight;
     int speed;
     int health;
+    int invincible;
+    int invincibleOnScreen;
     int score;
     int beenHit;
     int dead;
@@ -185,5 +195,6 @@ typedef struct Player {
 void Player_Init(Game *game, Level *level, int pIndex);
 void Player_Update(GameHandler *handler, int pIndex);
 void Player_Render(Game *game, int pIndex, HDC hdc, HDC bufferDC);
+void Player_Hit(Game *game, int pIndex, int damage);
 
 #endif

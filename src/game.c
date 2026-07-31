@@ -1537,22 +1537,8 @@ static void Jet_Update(Game *game) {
                         player->hitboxHeight
                     )) {
 
-                    player->health -= bomb->damage;
-
-                    if (player->health <= 0) {
-                        player->health = 0;
-                        player->dead = 1;
-                    } else {
-                        player->beenHit = 1;
-                    }
-
+                    Player_Hit(game, i, bomb->damage);
                     bomb->dealtDamage = 1;
-
-                    Camera_Shake(
-                        &game->camera,
-                        PLAYER_HIT_SHAKE_DURATION,
-                        PLAYER_HIT_SHAKE_STRENGTH
-                    );
                 }
             }
         }

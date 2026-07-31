@@ -39,6 +39,10 @@ void Player_Init(Game *game, Level *level, int pIndex) {
     player->attacking = 0;
     player->beenHit = 0;
     player->dead = 0;
+    player->invincible = 0;
+    player->invincibleTimer = 0.0f;
+    player->invincibleScreenTime = 0.0f;
+    player->invincibleOnScreen = 0;
     player->remove = 0;
     player->attackDirection = DIR_DOWN;
     player->attackMoveSpeed = 0;
@@ -237,6 +241,13 @@ void Player_Update(GameHandler *handler, int pIndex) {
 
     if (player->remove) return;
 
+    if (player->invincible) {
+        player->invincibleTimer = ((player->invincibleTimer - handler->game.deltaTime) >= 0) ? 
+                             (player->invincibleTimer - handler->game.deltaTime) : 
+                             0;
+        if (player->invincibleTimer == 0.0f) player->invincible = 0;
+    }
+
 
     int moving = 0;
     int sprinting = 0;
@@ -289,6 +300,8 @@ void Player_Update(GameHandler *handler, int pIndex) {
     } else if (player->beenHit && finished) {
         player->beenHit = 0;
         player->hurt.currentFrame = 0;
+        player->invincibleTimer = INVINCIBLE_HIT_TIMER;
+        player->invincible = 1;
     } else if (player->beenHit) {
         if (player->hasBarrel) {
             Drop_Barrel(game, pIndex);
@@ -521,6 +534,21 @@ void Player_Render(Game *game, int pIndex, HDC hdc, HDC bufferDC) {
     Number_Render(game, 10, 36 + pIndex * 30, pIndex + 1, hdc, bufferDC);
 
     if (player->remove) return;
+    if (player->invincible) {
+        player->invincibleScreenTime -= game->deltaTime;
+        if (player->invincibleOnScreen) {
+            if (player->invincibleScreenTime <= 0) {
+                player->invincibleScreenTime = INVINCIBLE_OFF_SCREEN_TIME;
+                player->invincibleOnScreen = 0;
+            }
+        } else {
+            if (player->invincibleScreenTime <= 0) {
+                player->invincibleScreenTime = INVINCIBLE_ON_SCREEN_TIME;
+                player->invincibleOnScreen = 1;
+            }
+            return;
+        }
+    }
     Animation *currentAnim = Player_GetCurrentAnimation(player);
 
     int playerScreenX = (int)player->x - game->camera.x;
@@ -554,6 +582,19 @@ void Player_Render(Game *game, int pIndex, HDC hdc, HDC bufferDC) {
         RGB(0, 0, 0)
     );
     DeleteDC(spriteDC);
+}
+
+void Player_Hit(Game *game, int pIndex, int damage) {
+    Player *player = &game->players[pIndex];
+    if (player->invincible || player->beenHit) return;
+    int health = player->health - damage;
+    player->health = (player->health >= 0) ? health : 0;
+    if (health > 0) player->beenHit = 1;
+    else {
+        player->dead = 1;
+    }
+
+    Camera_Shake(&game->camera, PLAYER_HIT_SHAKE_DURATION, PLAYER_HIT_SHAKE_STRENGTH);
 }
 
 static void Throw_Barrel(Game *game, int pIndex) {
