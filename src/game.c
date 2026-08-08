@@ -39,7 +39,6 @@ const char *levelPaths[] = {
 int Game_Init(Game *game) {
     if (game == NULL) return 0;
     srand((unsigned int) time(NULL));
-    printf("%llu\n", (unsigned long long)sizeof(*game));
     
 
     game->levelCount = sizeof(levelPaths) / sizeof(levelPaths[0]);
@@ -49,83 +48,85 @@ int Game_Init(Game *game) {
     game->backToMenu = 0;
     game->numPlayers = 1;
 
-    if (Load_Key_Codes(game)) printf("KeyCodes Loaded Successfully\n");
-    
-    Load_Image(&game->numbersImg, NUMBERS_PATH);
-
-    Load_Image(&game->wallTile, WALL_TILE_PATH);
-    Load_Image(&game->wallUpTile, WALL_UP_TILE_PATH);
-    Load_Image(&game->wallDownTile, WALL_DOWN_TILE_PATH);
-    Load_Image(&game->wallLeftTile, WALL_LEFT_TILE_PATH);
-    Load_Image(&game->wallRightTile, WALL_RIGHT_TILE_PATH);
-    Load_Image(&game->wallTLTile, WALL_TL_TILE_PATH);
-    Load_Image(&game->wallTRTile, WALL_TR_TILE_PATH);
-    Load_Image(&game->wallBLTile, WALL_BL_TILE_PATH);
-    Load_Image(&game->wallBRTile, WALL_BR_TILE_PATH);
-    Load_Image(&game->wallLUTile, WALL_LU_TILE_PATH);
-    Load_Image(&game->wallRUTile, WALL_RU_TILE_PATH);
-    Load_Image(&game->wallLDTile, WALL_LD_TILE_PATH);
-    Load_Image(&game->wallRDTile, WALL_RD_TILE_PATH);
-    Load_Image(&game->goalClosedTile, GOAL_CLOSED_TILE_PATH);
-    Load_Image(&game->goalOpenTile, GOAL_OPEN_TILE_PATH);
-    Load_Image(&game->floorTile, FLOOR_TILE_PATH);
-    Load_Image(&game->holeTile, HOLE_TILE_PATH);
-    Load_Image(&game->arrowImg, ARROW_PATH);
-
-    Load_Image(&game->jetAnim, JET_PATH);
-    Load_Image(&game->bombAnim, BOMB_PATH);
-    
-    Load_Image(&game->barrelHorizAnim, BARREL_HORIZ_PATH);
-    Load_Image(&game->barrelVertAnim, BARREL_VERT_PATH);
-
+    if (!Load_Key_Codes(game)) {
+        printf("ERROR: Load_Key_Codes failed\n");
+        return 0;
+    }
     
 
+    if (!Load_Image(&game->wallTile, WALL_TILE_PATH)) return 0;
+    if (!Load_Image(&game->wallUpTile, WALL_UP_TILE_PATH)) return 0;
+    if (!Load_Image(&game->wallDownTile, WALL_DOWN_TILE_PATH)) return 0;
+    if (!Load_Image(&game->wallLeftTile, WALL_LEFT_TILE_PATH)) return 0;
+    if (!Load_Image(&game->wallRightTile, WALL_RIGHT_TILE_PATH)) return 0;
+    if (!Load_Image(&game->wallTLTile, WALL_TL_TILE_PATH)) return 0;
+    if (!Load_Image(&game->wallTRTile, WALL_TR_TILE_PATH)) return 0;
+    if (!Load_Image(&game->wallBLTile, WALL_BL_TILE_PATH)) return 0;
+    if (!Load_Image(&game->wallBRTile, WALL_BR_TILE_PATH)) return 0;
+    if (!Load_Image(&game->wallLUTile, WALL_LU_TILE_PATH)) return 0;
+    if (!Load_Image(&game->wallRUTile, WALL_RU_TILE_PATH)) return 0;
+    if (!Load_Image(&game->wallLDTile, WALL_LD_TILE_PATH)) return 0;
+    if (!Load_Image(&game->wallRDTile, WALL_RD_TILE_PATH)) return 0;
+    if (!Load_Image(&game->goalClosedTile, GOAL_CLOSED_TILE_PATH)) return 0;
+    if (!Load_Image(&game->goalOpenTile, GOAL_OPEN_TILE_PATH)) return 0;
+    if (!Load_Image(&game->floorTile, FLOOR_TILE_PATH)) return 0;
+    if (!Load_Image(&game->holeTile, HOLE_TILE_PATH)) return 0;
+    if (!Load_Image(&game->arrowImg, ARROW_PATH)) return 0;
+
+    if (!Load_Image(&game->jetAnim, JET_PATH)) return 0;
+    if (!Load_Image(&game->bombAnim, BOMB_PATH)) return 0;
+    
+    if (!Load_Image(&game->barrelHorizAnim, BARREL_HORIZ_PATH)) return 0;
+    if (!Load_Image(&game->barrelVertAnim, BARREL_VERT_PATH)) return 0;
+
+    
 
 
-    Image_Init(
+
+    if (!Image_Init(
         &game->gameOverAnim,
         GAME_OVER_PATH,
         GAME_OVER_FRAME_WIDTH,
         GAME_OVER_FRAME_HEIGHT,
         GAME_OVER_FRAME_DELAY,
         (int[]){GAME_OVER_FRAMES, GAME_OVER_FRAMES, GAME_OVER_FRAMES, GAME_OVER_FRAMES}
-    );
+    )) return 0;
 
-    Image_Init(
+    if (!Image_Init(
         &game->gameWinAnim,
         GAME_WIN_PATH,
         GAME_WIN_FRAME_WIDTH,
         GAME_WIN_FRAME_HEIGHT,
         GAME_WIN_FRAME_DELAY,
         (int[]){GAME_WIN_FRAMES, GAME_WIN_FRAMES, GAME_WIN_FRAMES, GAME_WIN_FRAMES}
-    );
+    )) return 0;
 
-    Image_Init(
+    if (!Image_Init(
         &game->spawnAnim[HEALTH_BOX],
         HEALTH_BOX_PATH,
         SPAWN_BOX_FRAME_WIDTH,
         SPAWN_BOX_FRAME_HEIGHT,
         SPAWN_BOX_FRAME_DELAY,
         (int[]){SPAWN_BOX_FRAMES, SPAWN_BOX_FRAMES, SPAWN_BOX_FRAMES, SPAWN_BOX_FRAMES}
-    );
+    )) return 0;
 
-    Image_Init(
+    if (!Image_Init(
         &game->spawnAnim[STRENGTH_BOX],
         STRENGTH_BOX_PATH,
         SPAWN_BOX_FRAME_WIDTH,
         SPAWN_BOX_FRAME_HEIGHT,
         SPAWN_BOX_FRAME_DELAY,
         (int[]){SPAWN_BOX_FRAMES, SPAWN_BOX_FRAMES, SPAWN_BOX_FRAMES, SPAWN_BOX_FRAMES}
-    );
+    )) return 0;
 
-    Image_Init(
+    if (!Image_Init(
         &game->coinAnim,
         COIN_PATH,
         COIN_FRAME_WIDTH,
         COIN_FRAME_HEIGHT,
         COIN_FRAME_DELAY,
         (int[]){COIN_FRAMES, COIN_FRAMES, COIN_FRAMES, COIN_FRAMES}
-    );
+    )) return 0;
 
     
 
@@ -133,7 +134,6 @@ int Game_Init(Game *game) {
     game->camera.height = HEIGHT;
     game->camera.damping = CAMERA_DAMPING;
     game->camera.shakeTimer = 0;
-    game->camera.shakeDuration = 0;
     game->camera.shakeStrength = 0;
     game->camera.shakeOffsetX = 0;
     game->camera.shakeOffsetY = 0;
@@ -163,7 +163,7 @@ int Game_InitLevel(Game *game, const char *levelPath) {
     FILE *file = fopen(levelPath, "r");
     if (!file) {
         MessageBox(NULL, "Failed to load level", "Error", MB_OK);
-        printf("Failed to load level: %s\n", levelPath);
+        printf("ERROR: FILE NOT FOUND - Failed to load level: %s\n", levelPath);
         return 0;
     }
 
@@ -178,7 +178,7 @@ int Game_InitLevel(Game *game, const char *levelPath) {
         &level->enemySpeed
         ) != 6) {
 
-        printf("Invalid level header: level %d\n", game->currentLevel + 1);
+        printf("ERROR: FILE FORMAT - Invalid level header: level %d\n", game->currentLevel + 1);
         fclose(file);
         return 0;
     }
@@ -188,27 +188,28 @@ int Game_InitLevel(Game *game, const char *levelPath) {
         level->width > LEVEL_WIDTH ||
         level->height > LEVEL_HEIGHT) {
 
-        printf(
-            "Invalid level size: %d x %d\n",
-            level->width,
-            level->height
-        );
-
+        printf("ERROR: Invalid level size: %d x %d\n", level->width, level->height);
         fclose(file);
         return 0;
     }
 
-    level->tiles = malloc(
+    size_t tileCount =
         (size_t)level->width *
-        (size_t)level->height *
-        sizeof *level->tiles
-    );
+        (size_t)level->height;
+
+    size_t allocationSize =
+        tileCount * sizeof(*level->tiles);
+
+    level->tiles = malloc(allocationSize);
 
     if (level->tiles == NULL) {
-        printf("Failed to allocate level tiles\n");
+        printf("ERROR: MALLOC FAIL - Failed to allocate level tiles\n");
         fclose(file);
         return 0;
     }
+
+    printf("Level %d size: %llu bytes\n", game->currentLevel + 1, (unsigned long long)allocationSize);
+
     level->enemyCount = 0;
 
     for (int row = 0; row < level->height; row++) {
@@ -288,8 +289,8 @@ int Game_InitLevel(Game *game, const char *levelPath) {
 
                 case ENEMY_TILE:
                     if (level->enemyCount < MAX_ENEMIES) {
-                        level->enemies[level->enemyCount].x = col * TILE_SIZE;
-                        level->enemies[level->enemyCount].y = row * TILE_SIZE;
+                        level->enemies[level->enemyCount].x = col * TILE_SIZE - 16;
+                        level->enemies[level->enemyCount].y = row * TILE_SIZE - 16;
                         level->enemies[level->enemyCount].type = MELEE;
                         level->enemies[level->enemyCount].hitboxWidth = ENEMY_WIDTH;
                         level->enemies[level->enemyCount].hitboxHeight = ENEMY_HEIGHT;
@@ -301,13 +302,14 @@ int Game_InitLevel(Game *game, const char *levelPath) {
                         level->enemies[level->enemyCount].damage = 0;
                         level->enemyCount++;
                     } else {
-                        printf("FAILED TO INITILIZE ENEMY: TOO MANY ENEMIES\n");
+                        printf("ERROR: failed to initilize enemy - too many enemies\n");
+                        return 0;
                     }
                     break;
                 case ARCHER_TILE:
                     if (level->enemyCount < MAX_ENEMIES) {
-                        level->enemies[level->enemyCount].x = col * TILE_SIZE;
-                        level->enemies[level->enemyCount].y = row * TILE_SIZE;
+                        level->enemies[level->enemyCount].x = col * TILE_SIZE - 16;
+                        level->enemies[level->enemyCount].y = row * TILE_SIZE - 16;
                         level->enemies[level->enemyCount].type = ARCHER;
                         level->enemies[level->enemyCount].hitboxWidth = ARCHER_WIDTH;
                         level->enemies[level->enemyCount].hitboxHeight = ARCHER_HEIGHT;
@@ -319,7 +321,8 @@ int Game_InitLevel(Game *game, const char *levelPath) {
                         level->enemies[level->enemyCount].damage = 0;
                         level->enemyCount++;
                     } else {
-                        printf("FAILED TO INITILIZE ENEMY: TOO MANY ENEMIES\n");
+                        printf("ERROR: failed to initilize enemy - too many enemies\n");
+                        return 0;
                     }
                     break;
                 case GOAL_TILE:
@@ -335,7 +338,8 @@ int Game_InitLevel(Game *game, const char *levelPath) {
                         game->carousels[game->carouselCount].frameDelay = 0;
                         game->carouselCount++;
                     } else {
-                        printf("FAILED TO INITILIZE CAROUSEL: TOO MANY CAROUSELS\n");
+                        printf("ERROR: failed to initilize carousel - too many carousels\n");
+                        return 0;
                     }
                     break;
                 case CAROUSEL_CW_TILE:
@@ -347,7 +351,8 @@ int Game_InitLevel(Game *game, const char *levelPath) {
                         game->carousels[game->carouselCount].frameDelay = 0;
                         game->carouselCount++;
                     } else {
-                        printf("FAILED TO INITILIZE CAROUSEL: TOO MANY CAROUSELS\n");
+                        printf("ERROR: failed to initilize carousel - too many carousels\n");
+                        return 0;
                     }
                     break;
                 case CANNON_UP:
@@ -360,7 +365,8 @@ int Game_InitLevel(Game *game, const char *levelPath) {
                         game->cannons[game->cannonCount].damage = 0;
                         game->cannonCount++;
                     } else {
-                        printf("FAILED TO INITILIZE CANNON: TOO MANY CANNONS\n");
+                        printf("ERROR: failed to initilize cannons - too many cannons\n");
+                        return 0;
                     }
                     break;
                 case CANNON_DOWN:
@@ -373,7 +379,8 @@ int Game_InitLevel(Game *game, const char *levelPath) {
                         game->cannons[game->cannonCount].damage = 0;
                         game->cannonCount++;
                     } else {
-                        printf("FAILED TO INITILIZE CANNON: TOO MANY CANNONS\n");
+                        printf("ERROR: failed to initilize cannon - too many cannons\n");
+                        return 0;
                     }
                     break;
                 case CANNON_LEFT:
@@ -386,7 +393,8 @@ int Game_InitLevel(Game *game, const char *levelPath) {
                         game->cannons[game->cannonCount].damage = 0;
                         game->cannonCount++;
                     } else {
-                        printf("FAILED TO INITILIZE CANNON: TOO MANY CANNONS\n");
+                        printf("ERROR: failed to initilize cannon - too many cannons\n");
+                        return 0;
                     }
                     break;
                 case CANNON_RIGHT:
@@ -399,7 +407,8 @@ int Game_InitLevel(Game *game, const char *levelPath) {
                         game->cannons[game->cannonCount].damage = 0;
                         game->cannonCount++;
                     } else {
-                        printf("FAILED TO INITILIZE CANNON: TOO MANY CANNONS\n");
+                        printf("ERROR: failed to initilize cannon - too many cannons\n");
+                        return 0;
                     }
                     break;
                 case COIN_TILE:
@@ -430,14 +439,14 @@ int Game_InitLevel(Game *game, const char *levelPath) {
         if (strcmp(name, "enemy") == 0) {
             int health, damage, speed, hasSpawn;
             if (fscanf(file, "idx:%d health:%d damage:%d speed:%d hasSpawn:%d", &index, &health, &damage, &speed, &hasSpawn) != 5) {
-                printf("MAP ERROR: %s HAS INVALID FORMAT\n", name);
+                printf("ERROR: MAP - %s has invalid format\n", name);
                 return 0;
             } else if (index < 0 || index >= game->level.enemyCount ||
                 health <= 0 ||
                 damage <= 0 ||
                 speed <= 0 ||
                 hasSpawn < 0 || hasSpawn > 1) {
-                    printf("MAP ERROR: %s HAS INVALID ATRIBUTES\n", name);
+                    printf("ERROR: MAP - %s has invalid atributes\n", name);
                     return 0;
             }
             Enemy *enemy = &game->level.enemies[index];
@@ -449,14 +458,14 @@ int Game_InitLevel(Game *game, const char *levelPath) {
             int damage, bulletSpeed;
             float attackSpeed;
             if (fscanf(file, "idx:%d damage:%d bulletSpeed:%d attackSpeed:%f", &index, &damage, &bulletSpeed, &attackSpeed) != 4) {
-                printf("MAP ERROR: %s HAS INVALID FORMAT\n", name);
+                printf("ERROR: MAP - %s has invalid format\n", name);
                 return 0;
             }
             if (index < 0 || index >= game->cannonCount ||
                 damage <= 0 ||
                 bulletSpeed <= 0 ||
                 attackSpeed <= 0) {
-                    printf("MAP ERROR: %s HAS INVALID ATRIBUTES\n", name);
+                    printf("ERROR: MAP - %s has invalid atributes\n", name);
                     return 0;
             }
             Cannon *cannon = &game->cannons[index];
@@ -467,13 +476,13 @@ int Game_InitLevel(Game *game, const char *levelPath) {
             int damage;
             float frameDelay;
             if (fscanf(file, "idx:%d damage:%d frameDelay:%f", &index, &damage, &frameDelay) != 3) {
-                printf("MAP ERROR: %s HAS INVALID FORMAT\n", name);
+                printf("ERROR: MAP - %s has invalid format\n", name);
                 return 0;
             }
             if (index < 0 || index >= game->carouselCount ||
                 damage <= 0 ||
                 frameDelay <= 0) {
-                    printf("MAP ERROR: %s HAS INVALID ATRIBUTES\n", name);
+                    printf("ERROR: MAP - %s has invalid atributes\n", name);
                     return 0;
                 }
             Carousel *carousel = &game->carousels[index];
@@ -507,7 +516,7 @@ void Spawn_Barrel(Game *game, int x, int y) {
 
     if (barrel == NULL) {
         if (game->barrelCount >= MAX_BARRELS) {
-            printf("FAILED TO INITILIZE BARREL: TOO MANY BARRELS\n");
+            printf("ERROR: failed to initilize barrel - too many barrels\n");
             return;
         }
 
@@ -548,7 +557,7 @@ int Save_Game_Data(Game *game) {
     FILE *file = fopen(GAME_STATE_PATH, "wb");
 
     if (file == NULL) {
-        printf("Failed to open save file\n");
+        printf("WARNING: failed to open save file\n");
         return 0;
     }
 
@@ -562,7 +571,7 @@ int Save_Game_Data(Game *game) {
     fclose(file);
 
     if (written != 1) {
-        printf("Failed to write save data\n");
+        printf("WARNING: failed to write save data\n");
         return 0;
     }
 
@@ -580,14 +589,14 @@ int Game_Start_New(Game *game) {
     game->backToMenu = 0;
     game->score = 0;
 
-    for (int i = 0; i < game->numPlayers; i++) {
+    for (int i = 0; i < MAX_PLAYERS; i++) {
         Player *player = &game->players[i];
         player->health = MAX_HEALTH;
         player->dead = 0;
     }
 
     if (!Game_InitLevel(game, levelPaths[0])) {
-        printf("New game failed to load level 0\n");
+        printf("ERROR: failed to load new game\n");
         return 0;
     }
 
@@ -597,7 +606,7 @@ int Game_Start_New(Game *game) {
 int Clear_Game_Data() {
     FILE *file = fopen(GAME_STATE_PATH, "wb");
     if (file == NULL) {
-        printf("Failed to open save file - For clearing\n");
+        printf("WARNING: FILE NOT FOUND - save file for clearing\n");
         return 0;
     }
 
@@ -610,7 +619,7 @@ static int Load_Key_Codes(Game *game) {
     FILE *file = fopen(GAME_KEY_CODES_PATH, "rb");
 
     if (file == NULL) {
-        printf("FILE NOT FOUND: No key codes file found\n");
+        printf("WARNING: FILE NOT FOUND - No key codes file found\n");
         PlayerKeyCodeData *p1 = &game->playerKeyCodeData[0];
         PlayerKeyCodeData *p2 = &game->playerKeyCodeData[1];
         PlayerKeyCodeData *p3 = &game->playerKeyCodeData[2];
@@ -659,7 +668,7 @@ static int Load_Key_Codes(Game *game) {
         p4->interactKeyCode = 0; 
         p4->selectKeyCode = 0; 
         p4->pauseKeyCode = 0; 
-        return 0;
+        return 1;
     }
 
     KeyCodeData keyCodes = {0};
@@ -674,7 +683,7 @@ static int Load_Key_Codes(Game *game) {
     fclose(file);
 
     if (itemsRead != 1) {
-        printf("FILE EMPTY: No key codes file found\n");
+        printf("WARNING: FILE FORMAT - key codes file has incorrect format\n");
         PlayerKeyCodeData *p1 = &game->playerKeyCodeData[0];
         PlayerKeyCodeData *p2 = &game->playerKeyCodeData[1];
         PlayerKeyCodeData *p3 = &game->playerKeyCodeData[2];
@@ -724,51 +733,62 @@ static int Load_Key_Codes(Game *game) {
         p4->selectKeyCode = 0; 
         p4->pauseKeyCode = 0; 
 
-        return 0;
+        return 1;
     }
 
+    int playerKeyCodeError = 0;
     for (int i = 0; i < MAX_PLAYERS; i++) {
         PlayerKeyCodeData *playerkeyCodes = &keyCodes.playerKeyCodeData[i];
-        if (playerkeyCodes->upKeyCode <= 0 || playerkeyCodes->upKeyCode >= 255) {
-            printf("ERROR - PLAYER %d - Invalid Up Key Code: %d\n", i + 1, playerkeyCodes->upKeyCode);
-            return 0;
-        } else if (playerkeyCodes->downKeyCode <= 0 || playerkeyCodes->downKeyCode >= 255) {
-            printf("ERROR - PLAYER %d - Invalid Down Key Code: %d\n", i + 1, playerkeyCodes->downKeyCode);
-            return 0;
-        } else if (playerkeyCodes->leftKeyCode <= 0 || playerkeyCodes->leftKeyCode >= 255) {
-            printf("ERROR - PLAYER %d - Invalid Left Key Code: %d\n", i + 1, playerkeyCodes->leftKeyCode);
-            return 0;
-        } else if (playerkeyCodes->rightKeyCode <= 0 || playerkeyCodes->rightKeyCode >= 255) {
-            printf("ERROR - PLAYER %d - Invalid Right Key Code: %d\n", i + 1, playerkeyCodes->rightKeyCode);
-            return 0;
-        } else if (playerkeyCodes->sprintKeyCode <= 0 || playerkeyCodes->sprintKeyCode >= 255) {
-            printf("ERROR - PLAYER %d - Invalid Sprint Key Code: %d\n", i + 1, playerkeyCodes->sprintKeyCode);
-            return 0;
-        } else if (playerkeyCodes->dashKeyCode <= 0 || playerkeyCodes->dashKeyCode >= 255) {
-            printf("ERROR - PLAYER %d - Invalid Dash Key Code: %d\n", i + 1, playerkeyCodes->dashKeyCode);
-            return 0;
-        } else if (playerkeyCodes->attackKeyCode <= 0 || playerkeyCodes->attackKeyCode >= 255) {
-            printf("ERROR - PLAYER %d - Invalid Attack Key Code: %d\n", i + 1, playerkeyCodes->attackKeyCode);
-            return 0;
-        } else if (playerkeyCodes->interactKeyCode <= 0 || playerkeyCodes->interactKeyCode >= 255) {
-            printf("ERROR - PLAYER %d - Invalid Interact Key Code: %d\n", i + 1, playerkeyCodes->interactKeyCode);
-            return 0;
-        } else if (playerkeyCodes->selectKeyCode <= 0 || playerkeyCodes->selectKeyCode >= 255) {
-            printf("ERROR - PLAYER %d - Invalid Select Key Code: %d\n", i + 1, playerkeyCodes->selectKeyCode);
-            return 0;
+        if (playerkeyCodes->upKeyCode < 0 || playerkeyCodes->upKeyCode >= 255) {
+            printf("WARNING - PLAYER %d - Invalid Up Key Code: %d\n", i + 1, playerkeyCodes->upKeyCode);
+            playerKeyCodeError = 1;
+        } 
+        if (playerkeyCodes->downKeyCode < 0 || playerkeyCodes->downKeyCode >= 255) {
+            printf("WARNING - PLAYER %d - Invalid Down Key Code: %d\n", i + 1, playerkeyCodes->downKeyCode);
+            playerKeyCodeError = 1;
+        } 
+        if (playerkeyCodes->leftKeyCode < 0 || playerkeyCodes->leftKeyCode >= 255) {
+            printf("WARNING - PLAYER %d - Invalid Left Key Code: %d\n", i + 1, playerkeyCodes->leftKeyCode);
+        } 
+        if (playerkeyCodes->rightKeyCode < 0 || playerkeyCodes->rightKeyCode >= 255) {
+            printf("WARNING - PLAYER %d - Invalid Right Key Code: %d\n", i + 1, playerkeyCodes->rightKeyCode);
+            playerKeyCodeError = 1;
+        } 
+        if (playerkeyCodes->sprintKeyCode < 0 || playerkeyCodes->sprintKeyCode >= 255) {
+            printf("WARNING - PLAYER %d - Invalid Sprint Key Code: %d\n", i + 1, playerkeyCodes->sprintKeyCode);
+            playerKeyCodeError = 1;
+        } 
+        if (playerkeyCodes->dashKeyCode < 0 || playerkeyCodes->dashKeyCode >= 255) {
+            printf("WARNING - PLAYER %d - Invalid Dash Key Code: %d\n", i + 1, playerkeyCodes->dashKeyCode);
+            playerKeyCodeError = 1;
+        } 
+        if (playerkeyCodes->attackKeyCode < 0 || playerkeyCodes->attackKeyCode >= 255) {
+            printf("WARNING - PLAYER %d - Invalid Attack Key Code: %d\n", i + 1, playerkeyCodes->attackKeyCode);
+            playerKeyCodeError = 1;
+        } 
+        if (playerkeyCodes->interactKeyCode < 0 || playerkeyCodes->interactKeyCode >= 255) {
+            printf("WARNING - PLAYER %d - Invalid Interact Key Code: %d\n", i + 1, playerkeyCodes->interactKeyCode);
+            playerKeyCodeError = 1;
+        } 
+        if (playerkeyCodes->selectKeyCode < 0 || playerkeyCodes->selectKeyCode >= 255) {
+            printf("WARNING - PLAYER %d - Invalid Select Key Code: %d\n", i + 1, playerkeyCodes->selectKeyCode);
+            playerKeyCodeError = 1;
         } 
 
-        game->playerKeyCodeData[i].upKeyCode = playerkeyCodes->upKeyCode;
-        game->playerKeyCodeData[i].leftKeyCode = playerkeyCodes->leftKeyCode;
-        game->playerKeyCodeData[i].rightKeyCode = playerkeyCodes->rightKeyCode;
-        game->playerKeyCodeData[i].downKeyCode = playerkeyCodes->downKeyCode;
-        game->playerKeyCodeData[i].sprintKeyCode = playerkeyCodes->sprintKeyCode;
-        game->playerKeyCodeData[i].dashKeyCode = playerkeyCodes->dashKeyCode;
-        game->playerKeyCodeData[i].attackKeyCode = playerkeyCodes->attackKeyCode;
-        game->playerKeyCodeData[i].interactKeyCode = playerkeyCodes->interactKeyCode;
-        game->playerKeyCodeData[i].selectKeyCode = playerkeyCodes->selectKeyCode;
-        game->playerKeyCodeData[i].pauseKeyCode = playerkeyCodes->pauseKeyCode;
+        if (!playerKeyCodeError) {
+            game->playerKeyCodeData[i].upKeyCode = playerkeyCodes->upKeyCode;
+            game->playerKeyCodeData[i].leftKeyCode = playerkeyCodes->leftKeyCode;
+            game->playerKeyCodeData[i].rightKeyCode = playerkeyCodes->rightKeyCode;
+            game->playerKeyCodeData[i].downKeyCode = playerkeyCodes->downKeyCode;
+            game->playerKeyCodeData[i].sprintKeyCode = playerkeyCodes->sprintKeyCode;
+            game->playerKeyCodeData[i].dashKeyCode = playerkeyCodes->dashKeyCode;
+            game->playerKeyCodeData[i].attackKeyCode = playerkeyCodes->attackKeyCode;
+            game->playerKeyCodeData[i].interactKeyCode = playerkeyCodes->interactKeyCode;
+            game->playerKeyCodeData[i].selectKeyCode = playerkeyCodes->selectKeyCode;
+            game->playerKeyCodeData[i].pauseKeyCode = playerkeyCodes->pauseKeyCode;
+        }
     }
+    if (playerKeyCodeError) return 0;
     return 1;
 }
 
@@ -780,7 +800,7 @@ int Load_Game_Data(Game *game) {
     FILE *file = fopen(GAME_STATE_PATH, "rb");
 
     if (file == NULL) {
-        printf("No save file found\n");
+        printf("WARNING: FILE NOT FOUND - no game data file found\n");
         return 0;
     }
 
@@ -796,7 +816,7 @@ int Load_Game_Data(Game *game) {
     fclose(file);
 
     if (itemsRead != 1) {
-        printf("Save file is empty or invalid\n");
+        printf("WARNING: FILE FORMAT - game data file is empty or invalid\n");
         return 0;
     }
 
@@ -805,39 +825,32 @@ int Load_Game_Data(Game *game) {
      * not MAX_LEVELS.
      */
     if (state.level < 0 || state.level >= game->levelCount) {
-        printf("Invalid saved level: %d\n", state.level);
-        return 0;
-    }
-    if (state.numPlayers <= 0 || state.numPlayers > MAX_PLAYERS) {
-        printf("Invalid saved numPlayers: %d", state.numPlayers);
+        printf("WARNING: Invalid saved level: %d\n", state.level);
         return 0;
     }
     if (state.damping <= 0 || state.damping > 1) {
-        printf("Invalid saved damping: %.2f", state.damping);
+        printf("WARNING: Invalid saved damping: %.2f\n", state.damping);
     }
 
     for (int i = 0; i < MAX_PLAYERS; i++) {
         PlayerData *playerData = &state.playerData[i];
         if (playerData->health < 0 || playerData->health > MAX_HEALTH) {
-            printf("Invalid saved health player %d: %d\n", i + 1, playerData->health);
+            printf("WARNING: Invalid saved health player %d: %d\n", i + 1, playerData->health);
             return 0;
         
         }
     }
 
     game->currentLevel = state.level;
-    game->numPlayers = state.numPlayers;
     game->score = state.score;
     game->gameOver = 0;
     game->gameWin = 0;
     game->backToMenu = 0;
 
 
-    if (!Game_InitLevel(
-            game,
-            levelPaths[game->currentLevel])) {
-        printf("Could not initialize saved level\n");
-        return 0;
+    if (!Game_InitLevel(game, levelPaths[game->currentLevel])) {
+        printf("ERROR: could not initialize saved level\n");
+        return -1;
     }
 
     for (int i = 0; i < MAX_PLAYERS; i++) {
@@ -879,10 +892,6 @@ int Game_Has_Valid_Save(Game *game) {
 }
 
 int Game_Restart_Current_Level(Game *game) {
-    if (game == NULL) {
-        return 0;
-    }
-
     game->gameOver = 0;
     game->gameWin = 0;
     game->backToMenu = 0;
@@ -896,10 +905,9 @@ int Game_Restart_Current_Level(Game *game) {
     }
 
     if (!Game_InitLevel(game, levelPaths[game->currentLevel])) {
-        printf("Failed to restart level %d\n",game->currentLevel);
+        printf("ERROR: Failed to restart level %d\n",game->currentLevel);
         return 0;
     }
-
     return 1;
 }
 
@@ -908,7 +916,7 @@ int Spawn_Init(Game *game, int x, int y, SpawnType type) {
     Level *level = &game->level;
 
     if (level->spawnCount >= MAX_SPAWNS) {
-        printf("FAILED TO INITILIZE SPAWN: TOO MANY SPAWNS\n");
+        printf("WARNING: failed to initilize spawn - too many spawns\n");
         return 0;
     }
     
@@ -922,15 +930,21 @@ int Spawn_Init(Game *game, int x, int y, SpawnType type) {
 }
 
 
-void Game_Update(GameHandler *handler) {
+int Game_Update(GameHandler *handler) {
     int numAlive = 0;
     for (int i = 0; i < handler->game.numPlayers; i++) {
         if (handler->game.players[i].remove) numAlive++;
-        Player_Update(handler, i);
+        if (!Player_Update(handler, i)) {
+            printf("ERROR: Player_Update failed\n");
+            return 0;
+        }
     }
     handler->game.gameOver = numAlive == handler->game.numPlayers;
     Barrel_Update(&handler->game);
-    Enemy_Update(&handler->game);
+    if (!Enemy_Update(&handler->game)) {
+        printf("Error: Enemy_Update failed\n");
+        return 0;
+    }
     Carousel_Update(&handler->game);
     Cannon_Update(&handler->game);
     Game_UpdateCamera(&handler->game);
@@ -947,6 +961,7 @@ void Game_Update(GameHandler *handler) {
     if (Level_Won(&handler->game)) {
         handler->game.level.tiles[handler->game.level.goalIndex] = TILE_GOAL_OPEN;
     }
+    return 1;
 }
 
 
@@ -1038,13 +1053,13 @@ void Game_Render(GameHandler *handler, HWND hwnd) {
 
     if (game->gameOver) {
         if (Animation_Update(&game->gameOverAnim, 0, game->deltaTime)) {
-            game->gameOverAnim.currentFrame = GAME_OVER_FRAMES - 1;
+            game->gameOverAnim.currentFrame = 0;
             game->backToMenu = 1;
         }
         Game_Screen_Event(game, &game->gameOverAnim, hdc, bufferDC);
     } else if (game->gameWin) {
         if (Animation_Update(&game->gameWinAnim, 0, game->deltaTime)) {
-            game->gameWinAnim.currentFrame = GAME_WIN_FRAMES - 1;
+            game->gameWinAnim.currentFrame = 0;
         }
         Game_Screen_Event(game, &game->gameWinAnim, hdc, bufferDC);
     }
@@ -1053,17 +1068,16 @@ void Game_Render(GameHandler *handler, HWND hwnd) {
     Spawn_Render(game, level->spawns, level->spawnCount, hdc, bufferDC);
     Barrel_Render(game, hdc, bufferDC);
     for (int i = 0; i < game->numPlayers; i++) {
-        Player_Render(game, i, hdc, bufferDC);
+        Player_Render(handler, i, hdc, bufferDC);
     }
     Carousel_Render(game, hdc, bufferDC);
     Cannon_Render(game, hdc, bufferDC);
     Jet_Render(game, hdc, bufferDC);
     Enemy_Render(game, hdc, bufferDC);
 
-    Number_Render(game, SCORE_START_X, SCORE_START_Y, game->score, hdc, bufferDC);
-    Number_Render(game, FPS_X, FPS_Y, (int)handler->fps, hdc, bufferDC);
-    Number_Render(game, TIME_X, TIME_Y, (int)game->time, hdc, bufferDC);
-
+    Number_Render(handler, SCORE_START_X, SCORE_START_Y, game->score, STRING_ORANGE, hdc, bufferDC);
+    Number_Render(handler, FPS_X, FPS_Y, (int)handler->fps, STRING_BLUE, hdc, bufferDC);
+    Number_Render(handler, TIME_X, TIME_Y, (int)game->time, STRING_BLUE, hdc, bufferDC);
     BitBlt(hdc, 0, 0, game->camera.width, game->camera.height, bufferDC, 0, 0, SRCCOPY);
     SelectObject(bufferDC, oldBitmap);
     DeleteObject(bufferBitmap);
@@ -1098,8 +1112,6 @@ static void Barrel_Update(Game *game) {
                     barrel->remove = 1;
                 }
             }
-
-            continue;
         }
 
         if (!barrel->thrown) {
@@ -1200,10 +1212,10 @@ static void Barrel_Update(Game *game) {
                 barrel->frame = 1;
                 barrel->frameDelay = BARREL_FRAME_DELAY;
 
-                enemyBox.top -= BARREL_BREAK_HITBOX_INCREASE_Y;
-                enemyBox.left -= BARREL_BREAK_HITBOX_INCREASE_X;
-                enemyBox.bottom += BARREL_BREAK_HITBOX_INCREASE_Y;
-                enemyBox.right += BARREL_BREAK_HITBOX_INCREASE_X;
+                barrelBox.top -= BARREL_BREAK_HITBOX_INCREASE_Y;
+                barrelBox.left -= BARREL_BREAK_HITBOX_INCREASE_X;
+                barrelBox.bottom += BARREL_BREAK_HITBOX_INCREASE_Y;
+                barrelBox.right += BARREL_BREAK_HITBOX_INCREASE_X;
                 
 
                 enemy->beenHit = 1;
@@ -1229,59 +1241,6 @@ static void Barrel_Update(Game *game) {
     }
 }
 
-void Number_Render(Game *game, int startX, int startY, int num, HDC hdc, HDC bufferDC) {
-    int count = 0;
-    int digits[20];
-
-    if (num == 0) {
-        HDC numberDC = CreateCompatibleDC(hdc);
-        SelectObject(numberDC, game->numbersImg);
-        TransparentBlt(
-            bufferDC,
-            startX,
-            startY,
-            NUMBERS_FRAME_WIDTH,
-            NUMBERS_FRAME_HEIGHT,
-            numberDC,
-            0,
-            0,
-            NUMBERS_FRAME_WIDTH,
-            NUMBERS_FRAME_HEIGHT,
-            RGB(0, 0, 0)
-        );
-        DeleteDC(numberDC);
-        return;
-    }
-
-    while (num > 0) {
-        digits[count] = num % 10;
-        count++;
-        num /= 10;
-    }
-
-    for (int i = count - 1; i >= 0; i--) {
-        int j = (count - 1) - i;
-        int x = (NUMBERS_FRAME_WIDTH * j) + startX;
-        int y = startY;
-        HDC numberDC = CreateCompatibleDC(hdc);
-        SelectObject(numberDC, game->numbersImg);
-        int srcX = digits[i] * NUMBERS_FRAME_WIDTH;
-        TransparentBlt(
-            bufferDC,
-            x,
-            y,
-            NUMBERS_FRAME_WIDTH,
-            NUMBERS_FRAME_HEIGHT,
-            numberDC,
-            srcX,
-            0,
-            NUMBERS_FRAME_WIDTH,
-            NUMBERS_FRAME_HEIGHT,
-            RGB(0, 0, 0)
-        );
-        DeleteDC(numberDC);
-    }
-}
 
 
 
@@ -1406,23 +1365,27 @@ static void Barrel_Render(Game *game, HDC hdc, HDC bufferDC) {
     DeleteDC(barrelDC);
 }
 
-void Game_Next_Level(Game *game) {
-    for (int i = 0; i < game->numPlayers; i++) {
+int Game_Next_Level(Game *game) {
+    for (int i = 0; i < MAX_PLAYERS; i++) {
         Player *player = &game->players[i];
-        if (!player->health) player->health = 20;
+        if (player->health <= 0) player->health = 20;
     }
 
     int next = game->currentLevel + 1;
     if (next >= game->levelCount) {
         game->gameWin = 1;
-        return;
+        return 1;
     }
     game->currentLevel = next;
     if (!Game_InitLevel(game, levelPaths[game->currentLevel])) {
-        printf("Failed to load level %d", game->currentLevel);
-        return;
+        printf("ERROR: Failed to load level %d\n", game->currentLevel);
+        return 0;
     }
-    Save_Game_Data(game);
+    if (!Save_Game_Data(game)) {
+        printf("ERROR: Failed to save game data\n");
+        return 0;
+    }
+    return 1;
 }
 
 static int Level_Won(Game *game) {
@@ -1445,7 +1408,7 @@ void Spawn_Jet(Game *game, int pIndex) {
 
     if (jet == NULL) {
         if (game->jetCount >= MAX_JETS) {
-            printf("FAILED TO INITILIZE JET: TOO MANY JETS\n");
+            printf("WARNING: failed to initilize jet - too many jets\n");
             return;
         }
 
@@ -1479,7 +1442,7 @@ static void Jet_Update(Game *game) {
         if (!jet->remove) {
             New_Animation_Update(&jet->anim, 0, game->deltaTime);
 
-            jet->x -= jet->speed;
+            jet->x -= jet->speed * game->deltaTime;
 
             if (jet->x < (int)game->players[jet->player].x && bomb->remove) {
                 bomb->x = jet->x + (JET_FRAME_WIDTH / 2)
@@ -1723,11 +1686,11 @@ static void Game_UpdateCamera(Game *game)
     game->camera.x = (int)game->camera.exactX;
     game->camera.y = (int)game->camera.exactY;
 
-    Camera_UpdateShake(&game->camera);
+    Camera_UpdateShake(&game->camera, game->deltaTime);
 }
 
-void Image_Init(Animation *anim, const char *path, int frameWidth, int frameHeight, float frameDelay, int *frameCounts) {
-    Load_Image(&anim->image, path);
+int Image_Init(Animation *anim, const char *path, int frameWidth, int frameHeight, float frameDelay, int *frameCounts) {
+    if (!Load_Image(&anim->image, path)) return 0;
 
     anim->frameWidth = frameWidth;
     anim->frameHeight = frameHeight;
@@ -1738,6 +1701,7 @@ void Image_Init(Animation *anim, const char *path, int frameWidth, int frameHeig
     for (int i = 0; i < DIR_COUNT; i++) {
         anim->frameCount[i] = frameCounts[i];
     }
+    return 1;
 }
 
 void New_Image_Init(NewAnimation *anim, int frameWidth, int frameHeight, float frameDelay, int *frameCounts) {
@@ -1752,7 +1716,7 @@ void New_Image_Init(NewAnimation *anim, int frameWidth, int frameHeight, float f
     }
 }
 
-void Load_Image(HBITMAP *bitmap, const char *path) {
+int Load_Image(HBITMAP *bitmap, const char *path) {
     *bitmap = (HBITMAP)LoadImage(
         NULL,
         path,
@@ -1766,7 +1730,9 @@ void Load_Image(HBITMAP *bitmap, const char *path) {
         char msg[256];
         wsprintf(msg, "Failed to load: %s\nError code: %lu", path, GetLastError());
         MessageBox(NULL, msg, "LoadImage Error", MB_OK);
+        return 0;
     }
+    return 1;
 }
 
 
@@ -1899,7 +1865,7 @@ void Apply_Spawn_Effect(Game *game, Spawn *spawn, int pIndex) {
 
 int Create_Coin(Game *game, int x, int y, int value) {
     if (game->coinCount >= MAX_COINS) {
-        printf("FAILED TO INITILIZE COIN: TOO MANY COINS\n");
+        printf("WARNING: failed to initilize coin: too many coins\n");
         return 0;
     }
     
@@ -1911,13 +1877,12 @@ int Create_Coin(Game *game, int x, int y, int value) {
     return 1;
 }
 
-void Camera_Shake(Camera *camera, int duration, int strength) {
+void Camera_Shake(Camera *camera, float duration, int strength) {
     camera->shakeTimer = duration;
-    camera->shakeDuration = duration;
     camera->shakeStrength = strength;
 }
 
-void Camera_UpdateShake(Camera *camera) {
+void Camera_UpdateShake(Camera *camera, float deltaTime) {
     camera->shakeOffsetX = 0;
     camera->shakeOffsetY = 0;
 
@@ -1925,6 +1890,6 @@ void Camera_UpdateShake(Camera *camera) {
         camera->shakeOffsetX = (rand() % (camera->shakeStrength * 2 + 1)) - camera->shakeStrength;
         camera->shakeOffsetY = (rand() % (camera->shakeStrength * 2 + 1)) - camera->shakeStrength;
 
-        camera->shakeTimer--;
+        camera->shakeTimer -= deltaTime;
     }
 }

@@ -156,7 +156,7 @@ static void Cannon_Shoot(Cannon *cannon) {
 
     if (bullet == NULL) {
         if (cannon->bulletCount >= MAX_BULLETS) {
-            printf("FAILED TO INITILIZE CANNON BULLET: TOO MANY CANNON BULLETS\n");
+            printf("WARNING: failed to initilize cannon bullet - too many cannon bullets\n");
             return;
         }
 

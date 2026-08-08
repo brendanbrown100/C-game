@@ -38,7 +38,7 @@ void Home_Init(Menu *menu) {
     menu->downWasDown = 0;
     menu->selectWasDown = 1;
 }
-void Home_Update(GameHandler *handler) {
+int Home_Update(GameHandler *handler) {
     Menu *menu = &handler->menu;
 
     int upIsDown = (GetAsyncKeyState(handler->game.playerKeyCodeData[0].upKeyCode) & 0x8000) != 0;
@@ -83,13 +83,17 @@ void Home_Update(GameHandler *handler) {
                     Clear_Game_Data();
                     Home_Refresh_Continue(handler);
                     handler->currState = PLAYING;
+                } else {
+                    printf("ERROR: Game_Start_New failed\n");
+                    return 0;
                 }
                 break;
             case CONTINUE:
-                if (Load_Game_Data(&handler->game)) {
-                    handler->currState = PLAYING;
-                } else {
-                    printf("Continue failed\n");
+                int success = Load_Game_Data(&handler->game);
+                if (success == -1) {
+                    printf("ERROR: Load_Game_Data failed\n");
+                } else if (!success) {
+                    printf("WARNING: Load_Game_Data gives warning\n");
                     menu->options[CONTINUE].show = 0;
 
                     if (menu->currSelected == CONTINUE) {
@@ -97,6 +101,8 @@ void Home_Update(GameHandler *handler) {
                         menu->currSelected = NEW_GAME;
                         menu->options[NEW_GAME].selected = 1;
                     }
+                } else {
+                    handler->currState = PLAYING;
                 }
                 break;
             case SETTINGS:
@@ -104,7 +110,7 @@ void Home_Update(GameHandler *handler) {
                 handler->currState = SETTINGS_STATE;
                 break;
             case MENU_OPTION_COUNT:
-                printf("This should not happen");
+                printf("WARNING: MENU_OPTION_COUNT selected\n");
                 break;
 
         }
@@ -113,10 +119,13 @@ void Home_Update(GameHandler *handler) {
     menu->upWasDown = upIsDown;
     menu->downWasDown = downIsDown;
     menu->selectWasDown = selectIsDown;
+    return 1;
 }
 
 
-void Home_Render(Menu *menu, HWND hwnd) {
+void Home_Render(GameHandler *handler, HWND hwnd) {
+    Menu *menu = &handler->menu;
+
     HDC hdc = GetDC(hwnd);
 
     HDC bufferDC = CreateCompatibleDC(hdc);
@@ -125,9 +134,18 @@ void Home_Render(Menu *menu, HWND hwnd) {
 
     RECT screenRect = {0, 0, WIDTH, HEIGHT}; // x, y, width, height
 
-    FillRect(bufferDC, &screenRect, (HBRUSH)(COLOR_WINDOW + 1)); // default background
+    HBRUSH backgroundBrush = CreateSolidBrush(RGB(132, 126, 135));
+    FillRect(
+        bufferDC,
+        &screenRect,
+        backgroundBrush
+    );
+    DeleteObject(backgroundBrush);
 
     HDC homeDC = CreateCompatibleDC(hdc);
+
+    String_Render(handler, 260, 50, GAME_TITLE, 0, hdc, bufferDC);
+
     for (int i = 0; i < MENU_OPTION_COUNT; i++) {
         MenuOption *option = &menu->options[i];
         if (!option->show) continue;

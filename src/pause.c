@@ -40,7 +40,7 @@ void Pause_Init(PauseMenu *pauseMenu) {
     pauseMenu->selectWasDown = 1;
 }
 
-void Pause_Update(GameHandler *handler) {
+int Pause_Update(GameHandler *handler) {
     PauseMenu *pauseMenu = &handler->pauseMenu;
 
     int upIsDown = (GetAsyncKeyState(handler->game.playerKeyCodeData[pauseMenu->player].upKeyCode) & 0x8000) != 0;
@@ -74,7 +74,7 @@ void Pause_Update(GameHandler *handler) {
                 handler->currState = PLAYING;
                 break;
             case HOME:
-                Game_Restart_Current_Level(&handler->game);
+                if (!Game_Restart_Current_Level(&handler->game)) return 0;
                 Home_Refresh_Continue(handler);
                 handler->currState = MENU;
                 break;
@@ -84,7 +84,7 @@ void Pause_Update(GameHandler *handler) {
                 handler->currState = SETTINGS_STATE;
                 break;
             case PAUSE_OPTION_COUNT:
-                printf("ERROR: This should not happen - PAUSE_OPTION_COUNT selected");
+                printf("ERROR: This should not happen - PAUSE_OPTION_COUNT selected\n");
                 break;
 
         }
@@ -93,6 +93,7 @@ void Pause_Update(GameHandler *handler) {
     pauseMenu->upWasDown = upIsDown;
     pauseMenu->downWasDown = downIsDown;
     pauseMenu->selectWasDown = selectIsDown;
+    return 1;
 }
 
 void Pause_Render(PauseMenu *pauseMenu, HWND hwnd) {
@@ -104,7 +105,13 @@ void Pause_Render(PauseMenu *pauseMenu, HWND hwnd) {
 
     RECT screenRect = {0, 0, WIDTH, HEIGHT}; // x, y, width, height
 
-    FillRect(bufferDC, &screenRect, (HBRUSH)(COLOR_WINDOW + 1)); // default background
+    HBRUSH backgroundBrush = CreateSolidBrush(RGB(132, 126, 135));
+    FillRect(
+        bufferDC,
+        &screenRect,
+        backgroundBrush
+    );
+    DeleteObject(backgroundBrush);
 
     HDC pauseDC = CreateCompatibleDC(hdc);
 

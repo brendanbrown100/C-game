@@ -76,7 +76,7 @@
 #define WALL_RU_TILE_PATH     "Assets/Sprites/Static/wallRU.bmp"
 #define WALL_LD_TILE_PATH     "Assets/Sprites/Static/wallLD.bmp"
 #define WALL_RD_TILE_PATH     "Assets/Sprites/Static/wallRD.bmp"
-#define FLOOR_TILE_PATH       "Assets/Sprites/Static/floor.bmp"
+#define FLOOR_TILE_PATH       "Assets/Sprites/Static/floor2.bmp"
 #define HOLE_TILE_PATH        "Assets/Sprites/Static/hole.bmp"
 #define GOAL_OPEN_TILE_PATH   "Assets/Sprites/Static/goalOpen.bmp"
 #define GOAL_CLOSED_TILE_PATH "Assets/Sprites/Static/goalClosed.bmp"
@@ -118,12 +118,12 @@
 #define JET_FRAME_DELAY 0.31f
 #define JET_SPEED 300
 
-#define BOMB_FRAMES 11
-#define BOMB_FRAME_WIDTH 32
-#define BOMB_FRAME_HEIGHT 32
-#define BOMB_FRAME_DELAY 0.15f
-#define BOMB_EXPLODE_FRAME 5
-#define EXPL_START_SIZE 12
+#define BOMB_FRAMES         11
+#define BOMB_FRAME_WIDTH    32
+#define BOMB_FRAME_HEIGHT   32
+#define BOMB_FRAME_DELAY    0.15f
+#define BOMB_EXPLODE_FRAME  5
+#define EXPL_START_SIZE     12
 #define EXPL_SIZE_INCREMENT 4
 #define BOMB_DAMAGE 20
 
@@ -157,7 +157,7 @@
 
 #define COIN_VALUE 10
 
-#define PLAYER_HIT_SHAKE_DURATION 5
+#define PLAYER_HIT_SHAKE_DURATION 0.25f
 #define PLAYER_HIT_SHAKE_STRENGTH 3
 
 #define CAMERA_DAMPING 0.5f
@@ -211,8 +211,8 @@ typedef struct PlayerData {
 
 typedef struct GameData {
     PlayerData playerData[MAX_PLAYERS];
-    int numPlayers;
     float damping;
+    int numPlayers;
     int score;
     int level;
 } GameData;
@@ -258,16 +258,14 @@ typedef struct Level {
 typedef struct Camera {
     float exactX;
     float exactY;
+    float damping;
+    float shakeTimer;
 
     int x;
     int y;
     int width;
     int height;
 
-    float damping;
-
-    int shakeTimer;
-    int shakeDuration;
     int shakeStrength;
     int shakeOffsetX;
     int shakeOffsetY;
@@ -345,8 +343,6 @@ typedef struct Game {
     Animation gameWinAnim;
     Animation coinAnim;
 
-    HBITMAP numbersImg;
-
     HBITMAP wallTile;
     HBITMAP wallUpTile;
     HBITMAP wallDownTile;
@@ -417,27 +413,27 @@ typedef struct Game {
 
 int Game_Init(Game *game);
 int Game_InitLevel(Game *game, const char *levelPath);
-void Game_Update(GameHandler *handler);
+int Game_Update(GameHandler *handler);
 void Game_Render(GameHandler *handler, HWND hwnd);
-void Image_Init(Animation *anim, const char *path, int frameWidth, int frameHeight, float frameDelay, int *frameCounts);
+int Image_Init(Animation *anim, const char *path, int frameWidth, int frameHeight, float frameDelay, int *frameCounts);
 void New_Image_Init(NewAnimation *anim, int frameWidth, int frameHeight, float frameDelay, int *frameCounts);
 int Collision_Check(Game *game, int newX, int newY, int hitboxWidth, int hitboxHeight, int hitboxOffsetX, int hitboxOffsetY);
 int Animation_Update(Animation *animation, int direction, float deltaTime);
 int New_Animation_Update(NewAnimation *animation, int direction, float deltaTime);
 int RectsOverlap(int ax, int ay, int aw, int ah, int bx, int by, int bw, int bh);
-void Game_Next_Level(Game *game);
+int Game_Next_Level(Game *game);
 SpawnType Random_Spawn();
 int Check_Distance_Range(int x1, int y1, int width1, int height1, int x2, int y2, int width2, int height2, int range);
 int Spawn_Init(Game *game, int x, int y, SpawnType type);
 void Spawn_Render(Game *game, Spawn spawns[], int spawnCount, HDC hdc, HDC bufferDC);
 void Apply_Spawn_Effect(Game *game, Spawn *spawn, int pIndex);
-void Camera_UpdateShake(Camera *camera);
-void Camera_Shake(Camera *camera, int duration, int strength);
+void Camera_UpdateShake(Camera *camera, float deltaTime);
+void Camera_Shake(Camera *camera, float duration, int strength);
 void Coin_Render(Game *game, Coin coins[], int coinCount, HDC hdc, HDC bufferDC);
 int Create_Coin(Game *game, int x, int y, int value);
 int Rect_Overlap(RECT a, RECT b);
 void Get_Attack_Box(int x, int y, int hitboxOffsetX, int hitboxOffsetY, int hitboxWidth, int hitboxHeight, int dir, int range, RECT *attackbox);
-void Load_Image(HBITMAP *bitmap, const char *path);
+int Load_Image(HBITMAP *bitmap, const char *path);
 int Load_Game_Data(Game *game);
 int Save_Game_Data(Game *game);
 int Clear_Game_Data();
@@ -447,7 +443,6 @@ void Spawn_Jet(Game *game, int pIndex);
 int Check_Fall(Game *game, int newX, int newY, int hitboxWidth, int hitboxHeight, int hitboxOffsetX, int hitboxOffsetY);
 int Game_Restart_Current_Level(Game *game);
 void Spawn_Barrel(Game *game, int x, int y);
-void Number_Render(Game *game, int startX, int startY, int num, HDC hdc, HDC bufferDC);
 void Check_Game_Over(Game *game);
 
 #endif

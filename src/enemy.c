@@ -15,11 +15,11 @@ static int Normalize_Direction(int direction);
 static void Melee_Anim_Init(Enemy *enemy);
 static void Archer_Anim_Init(Enemy *enemy); 
 static void Melee_Attacking(Game *game, Enemy *enemy, Animation *anim, int finished);
-static void Archer_Attacking(Game *game, Enemy *enemy, Animation *anim, int finished);
+static int Archer_Attacking(Game *game, Enemy *enemy, Animation *anim, int finished);
 static void Arrow_Render(Game *game, HDC hdc, HDC bufferDC);
 static void Arrow_Update(Game *game);
 static int Arrow_Player_Collision(Game *game, Arrow *arrow);
-static void Shoot_Arrow(Game *game, Enemy *enemy);
+static int Shoot_Arrow(Game *game, Enemy *enemy);
 static Direction8 GetDirection8(int diffX, int diffY);
 
 void Enemy_Init(Level *level) {
@@ -35,7 +35,7 @@ void Enemy_Init(Level *level) {
         enemy->state = ENEMY_IDLE;
         enemy->attacking = 0;
         enemy->playerAttackingIdx = -1;
-        enemy->pathTimer = rand() % ENEMY_PATH_TIMER;
+        enemy->pathTimer = ENEMY_PATH_TIMER + (rand() % 3);
         enemy->dead = 0;
         enemy->remove = 0;
         enemy->attackHit = 0;
@@ -166,7 +166,7 @@ static void Archer_Anim_Init(Enemy *enemy) {
     );
 }
 
-void Enemy_Update(Game *game) {
+int Enemy_Update(Game *game) {
     Arrow_Update(game);
     Level *level = &game->level;
 
@@ -217,7 +217,7 @@ void Enemy_Update(Game *game) {
                 Melee_Attacking(game, enemy, anim, finished);
             }
             else if (enemy->type == ARCHER) {
-                Archer_Attacking(game, enemy, anim, finished);
+                if (!Archer_Attacking(game, enemy, anim, finished)) return 0;
             }
 
             continue;
@@ -248,11 +248,11 @@ void Enemy_Update(Game *game) {
             }
         }
         if (!inRange) continue;
-        enemy->pathTimer++;
+        enemy->pathTimer += game->deltaTime;
 
         if (enemy->pathTimer >= ENEMY_PATH_TIMER) {
             Enemy_FindPathBFS(game, enemy, bestIndex);
-            enemy->pathTimer = 0;
+            enemy->pathTimer = 0.0f;
         }
 
         Enemy_Follow_Path(game, enemy);
@@ -265,6 +265,8 @@ void Enemy_Update(Game *game) {
             enemy->health = 0;
         }
     }
+
+    return 1;
 
     
 }
@@ -280,9 +282,9 @@ static void Melee_Attacking(Game *game, Enemy *enemy, Animation *anim, int finis
     }
 }
 
-static void Archer_Attacking(Game *game, Enemy *enemy, Animation *anim, int finished) {
+static int Archer_Attacking(Game *game, Enemy *enemy, Animation *anim, int finished) {
     if (anim->currentFrame == ARCHER_SHOOT_FRAME) {
-        Shoot_Arrow(game, enemy);
+        if (!Shoot_Arrow(game, enemy)) return 0;
     }
 
     if (finished) {
@@ -290,6 +292,7 @@ static void Archer_Attacking(Game *game, Enemy *enemy, Animation *anim, int fini
         enemy->attackHit = 0;
         enemy->state = ENEMY_IDLE;
     }
+    return 1;
 }
 
 void Enemy_Render(Game *game, HDC hdc, HDC bufferDC) {
@@ -453,12 +456,12 @@ static int Arrow_Player_Collision(Game *game, Arrow *arrow) {
     return -1;
 }
 
-static void Shoot_Arrow(Game *game, Enemy *enemy) {
-    if (enemy->attackHit) return;
+static int Shoot_Arrow(Game *game, Enemy *enemy) {
+    if (enemy->attackHit) return 1;
 
     if (enemy->playerAttackingIdx >= game->numPlayers || enemy->playerAttackingIdx < 0) {
-        printf("ERROR: ENEMY TRYING TO SHOOT AT UNKNOWN PLAYER INDEX: [%d]", enemy->playerAttackingIdx);
-        return;
+        printf("ERROR: enemy shooting at unknown player index - [%d]\n", enemy->playerAttackingIdx);
+        return 0;
     }
     Player *player = &game->players[enemy->playerAttackingIdx];
     
@@ -473,8 +476,8 @@ static void Shoot_Arrow(Game *game, Enemy *enemy) {
 
     if (arrow == NULL) {
         if (game->arrowCount >= MAX_ARROWS) {
-            printf("FAILED TO INITILIZE ENEMY ARROW: TOO MANY ARROWS\n");
-            return;
+            printf("WARNING: failed to initilize enemy arrow - too many arrows\n");
+            return 1;
         }
 
         arrow = &game->arrows[game->arrowCount];
@@ -500,6 +503,7 @@ static void Shoot_Arrow(Game *game, Enemy *enemy) {
     arrow->damage = ARROW_DAMAGE;
     arrow->remove = 0;
     enemy->attackHit = 1;
+    return 1;
 }
 
 static Direction8 GetDirection8(int diffX, int diffY) {
@@ -529,12 +533,12 @@ static Direction8 GetDirection8(int diffX, int diffY) {
 }
 
 static int Enemy_Can_Attack(Game *game, Enemy *enemy) {
-    if (enemy->attackCoolDown > 0) {
+    if (enemy->attackCoolDown > 0.0f) {
         enemy->attackCoolDown -= game->deltaTime;
-        if (enemy->attackCoolDown > 0) {
+        if (enemy->attackCoolDown > 0.0f) {
             return -1;
         }
-        enemy->attackCoolDown = 0;
+        enemy->attackCoolDown = 0.0f;
     }   
     int distance = 0;    
     if (enemy->type == MELEE) distance = ENEMY_ATTACK_DISTANCE;
@@ -545,7 +549,7 @@ static int Enemy_Can_Attack(Game *game, Enemy *enemy) {
         Player *player = &game->players[i];
         if (player->dead) continue;
         int dist = Check_Distance_Range((int)enemy->x + enemy->hitboxOffsetX, (int)enemy->y + enemy->hitboxOffsetY, enemy->hitboxWidth, enemy->hitboxHeight, (int)player->x + player->hitboxOffsetX, (int)player->y + player->hitboxOffsetY, player->hitboxWidth, player->hitboxHeight, distance);
-        if (dist == 0 || enemy->attackCoolDown > 0) {
+        if (dist == 0 || enemy->attackCoolDown > 0.0f) {
             continue;
         }
         if (dist < minDist) {

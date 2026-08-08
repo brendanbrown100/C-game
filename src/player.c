@@ -8,7 +8,7 @@
 static void HealthBar_Update(Player *player);
 static void Player_CheckAttackHit(Game *game, int pIndex);
 static Animation *Player_GetCurrentAnimation(Player *player);
-static void Check_Player_Interact(Game *game, int pIndex);
+static int Check_Player_Interact(Game *game, int pIndex);
 static void Check_Player_Spawn(Game *game, int pIndex);
 static void Check_Player_Coin(Game *game, int pIndex);
 static int Check_Enemy_Collision(Game *game, int playerX, int playerY, int pIndex);
@@ -229,22 +229,21 @@ void Player_Init(Game *game, Level *level, int pIndex) {
 }
 
 
-void Player_Update(GameHandler *handler, int pIndex) {
+int Player_Update(GameHandler *handler, int pIndex) {
     Game *game = &handler->game;
     Player *player = &game->players[pIndex];
 
     if ((GetAsyncKeyState(game->playerKeyCodeData[pIndex].pauseKeyCode) & 0x0001)) {
         handler->currState = PAUSED;
         handler->pauseMenu.player = pIndex;
-        return;
+        return 1;
     }
 
-    if (player->remove) return;
+    if (player->remove) return 1;
 
     if (player->invincible) {
         player->invincibleTimer = ((player->invincibleTimer - handler->game.deltaTime) >= 0) ? 
-                             (player->invincibleTimer - handler->game.deltaTime) : 
-                             0;
+                                   (player->invincibleTimer - handler->game.deltaTime) : 0;
         if (player->invincibleTimer == 0.0f) player->invincible = 0;
     }
 
@@ -255,8 +254,7 @@ void Player_Update(GameHandler *handler, int pIndex) {
     float newX = player->x;
     float newY = player->y;
 
-    int dashIsDown =
-        (GetAsyncKeyState(game->playerKeyCodeData[pIndex].dashKeyCode) & 0x8000) != 0;
+    int dashIsDown = (GetAsyncKeyState(game->playerKeyCodeData[pIndex].dashKeyCode) & 0x8000) != 0;
 
     int dashPressed =
         dashIsDown && !player->dashWasDown;
@@ -303,10 +301,6 @@ void Player_Update(GameHandler *handler, int pIndex) {
         player->invincibleTimer = INVINCIBLE_HIT_TIMER;
         player->invincible = 1;
     } else if (player->beenHit) {
-        if (player->hasBarrel) {
-            Drop_Barrel(game, pIndex);
-        }
-
         player->state = PLAYER_HURT;
     } else if (!player->attacking && !player->throwingBarrel) {
         if ((GetAsyncKeyState(game->playerKeyCodeData[pIndex].sprintKeyCode) & 0x8000)) sprinting = 1;
@@ -443,7 +437,7 @@ void Player_Update(GameHandler *handler, int pIndex) {
         }
 
         if (GetAsyncKeyState(game->playerKeyCodeData[pIndex].interactKeyCode) & 0x0001) {
-            Check_Player_Interact(game, pIndex);
+            if (!Check_Player_Interact(game, pIndex)) return 0;
         }
     } else if (player->attacking || player->throwingBarrel) {
         if (player->attacking) {
@@ -500,10 +494,12 @@ void Player_Update(GameHandler *handler, int pIndex) {
         player->hasBarrel = 0;
         player->state = PLAYER_IDLE;
     }
+    return 1;
 }
 
 
-void Player_Render(Game *game, int pIndex, HDC hdc, HDC bufferDC) {
+void Player_Render(GameHandler *handler, int pIndex, HDC hdc, HDC bufferDC) {
+    Game *game = &handler->game;
     Player *player = &game->players[pIndex];
     Animation *healthBar = &player->healthBar;
 
@@ -531,7 +527,7 @@ void Player_Render(Game *game, int pIndex, HDC hdc, HDC bufferDC) {
     );
     DeleteDC(healthDC);
 
-    Number_Render(game, 10, 36 + pIndex * 30, pIndex + 1, hdc, bufferDC);
+    Number_Render(handler, 10, 36 + pIndex * 30, pIndex + 1, STRING_ORANGE, hdc, bufferDC);
 
     if (player->remove) return;
     if (player->invincible) {
@@ -594,6 +590,9 @@ void Player_Hit(Game *game, int pIndex, int damage) {
         player->dead = 1;
     }
 
+    if (player->hasBarrel) {
+            Drop_Barrel(game, pIndex);
+        }
     Camera_Shake(&game->camera, PLAYER_HIT_SHAKE_DURATION, PLAYER_HIT_SHAKE_STRENGTH);
 }
 
@@ -777,14 +776,14 @@ static void Check_Player_Coin(Game *game, int pIndex) {
     }
 }
 
-static void Check_Player_Interact(Game *game, int pIndex) {
+static int Check_Player_Interact(Game *game, int pIndex) {
     Player *player = &game->players[pIndex]; 
     Level *level = &game->level;
 
     if (level->tiles[level->goalIndex] == TILE_GOAL_OPEN) {
         if (RectsOverlap(
-            (int)player->x + player->hitboxOffsetX,
-            (int)player->y + player->hitboxOffsetY,
+            (int)player->x,
+            (int)player->y,
             player->spriteWidth,
             player->spriteHeight,
             (level->goalIndex % level->width) * TILE_SIZE,
@@ -792,12 +791,16 @@ static void Check_Player_Interact(Game *game, int pIndex) {
             TILE_SIZE,
             TILE_SIZE
         )) {
-            Game_Next_Level(game);
+            if (!Game_Next_Level(game)) {
+                printf("ERROR: Game_Next_Level failed");
+                return 0;
+            }
         }
-    } 
+    }
+    return 1; 
 
     if (player->hasBarrel) {
-        return;
+        return 1;
     }
 
     for (int i = 0; i < game->barrelCount; i++) {
@@ -825,9 +828,10 @@ static void Check_Player_Interact(Game *game, int pIndex) {
             player->hasBarrel = 1;
             player->carriedBarrelIndex = i;
 
-            return;
+            return 1;
         }
     }
+    return 1;
 }
 
 static void Update_Carried_Barrel(Game *game, int pIndex) {

@@ -89,7 +89,7 @@
 #define HURT_FRAME_DELAY 0.09f
 #define DEATH_FRAME_DELAY 0.31f
 
-#define INVINCIBLE_HIT_TIMER 0.5f
+#define INVINCIBLE_HIT_TIMER 0.75f
 
 #define INVINCIBLE_ON_SCREEN_TIME 0.1f
 #define INVINCIBLE_OFF_SCREEN_TIME 0.05f
@@ -193,8 +193,8 @@ typedef struct Player {
 } Player;
 
 void Player_Init(Game *game, Level *level, int pIndex);
-void Player_Update(GameHandler *handler, int pIndex);
-void Player_Render(Game *game, int pIndex, HDC hdc, HDC bufferDC);
+int Player_Update(GameHandler *handler, int pIndex);
+void Player_Render(GameHandler *handler, int pIndex, HDC hdc, HDC bufferDC);
 void Player_Hit(Game *game, int pIndex, int damage);
 
 #endif

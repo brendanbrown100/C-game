@@ -9,9 +9,9 @@
 #define MENU_OPTION_HEIGHT 50
 
 #define MENU_OPTION_X 100
-#define NEW_GAME_Y 100
-#define CONTINUE_Y 200
-#define SETTINGS_Y 400
+#define NEW_GAME_Y 150
+#define CONTINUE_Y 250
+#define SETTINGS_Y 450
 
 
 #define NEW_GAME_PATH "Assets/Sprites/Static/newGame.bmp"
@@ -51,8 +51,8 @@ typedef struct Menu {
 
 
 void Home_Init(Menu *menu);
-void Home_Update(GameHandler *handler);
-void Home_Render(Menu *menu, HWND hwnd);
+int Home_Update(GameHandler *handler);
+void Home_Render(GameHandler *handler, HWND hwnd);
 void Home_Refresh_Continue(GameHandler *handler);
 
 #endif

@@ -46,13 +46,16 @@ int Window_Create(Window *window, HINSTANCE hInstance, int nCmdShow, int width, 
     }
 
     window->hwnd = CreateWindowEx(
-        WS_EX_CLIENTEDGE,
+        WS_EX_APPWINDOW,
         g_szClassName,
         title,
-        WS_POPUP | WS_VISIBLE,
-        CW_USEDEFAULT, CW_USEDEFAULT,
-        width, height,
-        NULL, NULL,
+        WS_POPUP,
+        0,
+        0,
+        width,
+        height,
+        NULL,
+        NULL,
         hInstance,
         NULL
     );

@@ -57,7 +57,7 @@ typedef struct PauseMenu {
 } PauseMenu;
 
 void Pause_Init(PauseMenu *pauseMenu);
-void Pause_Update(GameHandler *handler);
+int Pause_Update(GameHandler *handler);
 void Pause_Render(PauseMenu *pauseMenu, HWND hwnd);
 
 #endif

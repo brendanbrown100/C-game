@@ -20,15 +20,13 @@
 
 #define SETTINGS_TITLE_WIDTH    215
 #define SETTINGS_TITLE_HEIGHT   50
-#define SETTINGS_TITLE_X        292
+#define SETTINGS_TITLE_X        325
 #define SETTINGS_TITLE_Y        25
 
-#define SETTINGS_OPTION_START_Y      100
-#define SETTINGS_OPTION_INCREMENT_Y  30
 #define SETTINGS_OPTION_X            100
 #define SETTINGS_OPTION_WIDTH        150
 #define SETTINGS_OPTION_HEIGHT       25
-#define KEY_CODE_VAL_X               275
+#define KEY_CODE_VAL_X               400
 
 #define OPTION_REMAP_DELAY 0.5f
 
@@ -53,7 +51,6 @@ typedef enum SettingsOptionType {
 } SettingsOptionType;
 
 typedef struct SettingsOption {
-    HBITMAP optionImg;
     SettingsOptionType type;
 
     float remapDelay;
@@ -68,8 +65,6 @@ typedef struct SettingsOption {
 
 typedef struct Settings {
     SettingsOption options[TOTAL_SETTINGS_OPTIONS];
-    HBITMAP settingsTitle;
-    HBITMAP numbersImg;
 
     int player;
 
@@ -81,7 +76,7 @@ typedef struct Settings {
 } Settings;
 
 void Settings_Init(Settings *settings);
-void Settings_Update(GameHandler *handler);
+int Settings_Update(GameHandler *handler);
 void Settings_Render(GameHandler *handler, HWND hwnd);
 
 #endif
